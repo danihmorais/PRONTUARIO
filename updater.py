@@ -21,7 +21,7 @@ except ImportError:
     windll = None
 
 
-REPO_URL = "https://api.github.com/repos/danihmorais/LICITACAO/releases/latest"
+REPO_URL = "https://api.github.com/repos/danihmorais/PRONTUARIO/releases/latest"
 DOWNLOAD_TIMEOUT = 60
 
 if getattr(sys, "frozen", False):
@@ -37,7 +37,7 @@ def verificar_e_atualizar():
     try:
         req = urllib.request.Request(
             REPO_URL,
-            headers={"User-Agent": "Licita.AI-Updater"}
+            headers={"User-Agent": "Prontuario-Updater"}
         )
 
         with urllib.request.urlopen(req, timeout=5) as response:
@@ -105,18 +105,18 @@ def baixar_e_instalar_update(data):
         )
         return False
 
-    temp_dir = tempfile.mkdtemp(prefix="licita_update_")
+    temp_dir = tempfile.mkdtemp(prefix="prontuario_update_")
 
     try:
 
         new_exe_path = os.path.join(
             temp_dir,
-            "LicitaAI_new.tmp"
+            "Prontuario_new.tmp"
         )
 
         req_dl = urllib.request.Request(
             download_url,
-            headers={"User-Agent": "Licita.AI-Updater"}
+            headers={"User-Agent": "Prontuario-Updater"}
         )
 
         with urllib.request.urlopen(
@@ -130,7 +130,7 @@ def baixar_e_instalar_update(data):
 
         updater_copy = os.path.join(
             tempfile.gettempdir(),
-            "LicitaAI_Updater.exe"
+            "Prontuario_Updater.exe"
         )
 
         if os.path.exists(updater_copy):
@@ -189,7 +189,7 @@ class _UpdateWindow(ctk.CTk):
         self.old_exe = old_exe
         self.new_exe = new_exe
 
-        self.title("Licita.AI — Atualizando")
+        self.title("Prontuario — Atualizando")
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
         self.resizable(False, False)
@@ -285,7 +285,7 @@ class _UpdateWindow(ctk.CTk):
 
         ctk.CTkLabel(
             self,
-            text="Atualizando Licita.AI",
+            text="Atualizando Prontuario",
             font=ctk.CTkFont(
                 size=22,
                 weight="bold"

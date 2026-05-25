@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-APP_NAME = "Licita.AI"
+APP_NAME = "Prontuario"
 APP_VERSION = "1.0"
 
 if getattr(sys, 'frozen', False):
@@ -16,15 +16,15 @@ ARQUIVO_DADOS = os.path.join(EXECUTABLE_DIR, "dados_salvos.json")
 ARQUIVO_SETTINGS_EXTERNO = os.path.join(EXECUTABLE_DIR, "settings.json")
 ARQUIVO_SETTINGS_BUNDLED = os.path.join(BASE_DIR, "settings.json")
 
-MODEL_OPENAI = "gpt-4o-mini"
+MODEL_OPENROUTER = "openrouter/free"
 MODEL_GEMINI = "gemini-2.5-flash"
 
 PROVEDORES_IA = {
-    "openai": "ChatGPT (OpenAI)",
+    "openrouter": "OpenRouter",
     "gemini": "Gemini (Google)"
 }
 
-DEFAULT_PROVIDER = "openai"
+DEFAULT_PROVIDER = "gemini"
 
 BASE_FILES = [
     "DFD - BASE.docx",

@@ -1,15 +1,9 @@
-"""
-consulta_window.py
-Janela de consultas do MediSystem com suporte a modo claro/escuro.
-"""
-
 from customtkinter import *
 from PIL import Image
-from layout import layout
 from theme_manager import ThemeManager
 
 
-class ConsultaWindows(CTkToplevel, layout):
+class AppointmentWindows(CTkToplevel):
 
     def __init__(self, parent, controller):
         self._themed_widgets: list[dict] = []
@@ -23,7 +17,7 @@ class ConsultaWindows(CTkToplevel, layout):
         self.resizable(False, False)
 
         self._tm.subscribe(self._on_theme_change)
-        self.configure(fg_color=self.GRAY_BG)
+        self.configure(fg_color=self._tm.c("GRAY_BG"))
 
         self._build_topbar()
         self._build_tabview()
@@ -40,51 +34,51 @@ class ConsultaWindows(CTkToplevel, layout):
 
     def _label(self, parent, text, font_size=12, bold=False, **place_kwargs):
         weight = "bold" if bold else "normal"
-        lbl = CTkLabel(parent, text=text, text_color=self.BLACK,
-                       font=("Segoe UI", font_size, weight))
+        lbl = CTkLabel(parent, text=text, text_color=self._tm.c("BLACK"),
+                       font=(self._tm.font, font_size, weight))
         lbl.place(**place_kwargs)
-        self._tw_add(lbl, text_color="BLACK")
+        self._tw_add(lbl, text_color=self._tm.c("BLACK"))
         return lbl
 
     def _entry(self, parent, width, height=32, placeholder="", **place_kwargs):
         ent = CTkEntry(
             parent, width=width, height=height,
-            fg_color=self.WHITE, bg_color=self.BLUE_XL,
+            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
             corner_radius=6,
-            border_color=self.GRAY_DARK, border_width=1,
-            text_color=self.BLACK,
-            font=("Segoe UI", 14, "normal"),
+            border_color=self._tm.c("GRAY_DARK"), border_width=1,
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 14, "normal"),
             placeholder_text=placeholder,
-            placeholder_text_color=self.GRAY,
+            placeholder_text_color=self._tm.c("GRAY"),
         )
         ent.place(**place_kwargs)
-        self._tw_add(ent, fg_color="WHITE", bg_color="BLUE_XL",
-                       border_color="GRAY_DARK", text_color="BLACK")
+        self._tw_add(ent, fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
+                       border_color=self._tm.c("GRAY_DARK"), text_color=self._tm.c("BLACK"))
         return ent
 
     def _combo(self, parent, width, values, **place_kwargs):
         cb = CTkComboBox(
             parent, width=width, height=32,
-            fg_color=self.WHITE, bg_color=self.BLUE_XL,
+            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
             corner_radius=6,
-            border_color=self.GRAY_DARK, border_width=1,
-            button_color=self.BLUE, button_hover_color=self.DARK_BLUE,
-            dropdown_fg_color=self.WHITE,
-            dropdown_hover_color=self.BLUE_XL,
-            dropdown_text_color=self.BLACK,
-            dropdown_font=("Segoe UI", 14, "normal"),
-            text_color=self.BLACK,
-            font=("Segoe UI", 14, "normal"),
+            border_color=self._tm.c("GRAY_DARK"), border_width=1,
+            button_color=self._tm.c("BLUE"), button_hover_color=self._tm.c("DARK_BLUE"),
+            dropdown_fg_color=self._tm.c("WHITE"),
+            dropdown_hover_color=self._tm.c("BLUE_XL"),
+            dropdown_text_color=self._tm.c("BLACK"),
+            dropdown_font=(self._tm.font, 14, "normal"),
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 14, "normal"),
             values=values,
         )
         cb.place(**place_kwargs)
         self._tw_add(cb,
-                       fg_color="WHITE", bg_color="BLUE_XL",
-                       border_color="GRAY_DARK", text_color="BLACK",
-                       button_color="BLUE", button_hover_color="DARK_BLUE",
-                       dropdown_fg_color="WHITE",
-                       dropdown_hover_color="BLUE_XL",
-                       dropdown_text_color="BLACK")
+                       fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
+                       border_color=self._tm.c("GRAY_DARK"), text_color=self._tm.c("BLACK"),
+                       button_color=self._tm.c("BLUE"), button_hover_color=self._tm.c("DARK_BLUE"),
+                       dropdown_fg_color=self._tm.c("WHITE"),
+                       dropdown_hover_color=self._tm.c("BLUE_XL"),
+                       dropdown_text_color=self._tm.c("BLACK"))
         return cb
 
     def _cal_button(self, parent, **place_kwargs):
@@ -92,8 +86,8 @@ class ConsultaWindows(CTkToplevel, layout):
         btn = CTkButton(
             parent, width=32, height=32, text="", image=icon,
             compound="left",
-            fg_color=self.BLUE, bg_color=self.BLUE_XL,
-            hover_color=self.DARK_BLUE, corner_radius=6,
+            fg_color=self._tm.c("BLUE"), bg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("DARK_BLUE"), corner_radius=6,
         )
         btn.place(**place_kwargs)
         self._tw_add(btn, fg_color="BLUE", bg_color="BLUE_XL",
@@ -104,8 +98,8 @@ class ConsultaWindows(CTkToplevel, layout):
         btn = CTkButton(
             parent, width=131, height=32, text=text,
             compound="left",
-            fg_color=self.BLUE, bg_color=self.BLUE_XL,
-            hover_color=self.DARK_BLUE, corner_radius=6,
+            fg_color=self._tm.c("BLUE"), bg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("DARK_BLUE"), corner_radius=6,
         )
         btn.place(**place_kwargs)
         self._tw_add(btn, fg_color="BLUE", bg_color="BLUE_XL",
@@ -116,49 +110,49 @@ class ConsultaWindows(CTkToplevel, layout):
 
     def _build_topbar(self):
         self.fr_topbar = CTkFrame(self, width=1550, height=53,
-                                  fg_color=self.TOPBAR_BG, corner_radius=0)
+                                  fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
         self.fr_topbar.place(x=0, y=0)
-        self._tw_add(self.fr_topbar, fg_color="TOPBAR_BG")
+        self._tw_add(self.fr_topbar, fg_color=self._tm.c("TOPBAR_BG"))
 
         try:
             img_bg = CTkImage(Image.open("assets/bg_topbar.png"), size=(691, 52))
             lb_bg = CTkLabel(self.fr_topbar, image=img_bg, text="",
-                             fg_color=self.TOPBAR_BG)
+                             fg_color=self._tm.c("TOPBAR_BG"))
             lb_bg.place(x=858, y=0)
-            self._tw_add(lb_bg, fg_color="TOPBAR_BG")
+            self._tw_add(lb_bg, fg_color=self._tm.c("TOPBAR_BG"))
         except Exception:
             pass
 
         try:
             icon_user = CTkImage(Image.open("assets/icons/user.png"), size=(32, 32))
             lb_icon = CTkLabel(self.fr_topbar, image=icon_user, text="",
-                               fg_color=self.TOPBAR_BG)
+                               fg_color=self._tm.c("TOPBAR_BG"))
             lb_icon.place(x=24, y=10)
-            self._tw_add(lb_icon, fg_color="TOPBAR_BG")
+            self._tw_add(lb_icon, fg_color=self._tm.c("TOPBAR_BG"))
         except Exception:
             pass
 
         lbl_nome = CTkLabel(self.fr_topbar, text="Bruno Álex",
-                            text_color=self.TOPBAR_TEXT,
-                            font=("Segoe UI", 12, "bold"), height=12)
+                            text_color=self._tm.c("TOPBAR_TEXT"),
+                            font=(self._tm.font, 12, "bold"), height=12)
         lbl_nome.place(x=64, y=10)
-        self._tw_add(lbl_nome, text_color="TOPBAR_TEXT", fg_color="TOPBAR_BG")
+        self._tw_add(lbl_nome, text_color=self._tm.c("TOPBAR_TEXT"), fg_color=self._tm.c("TOPBAR_BG"))
 
         lbl_nivel = CTkLabel(self.fr_topbar, text="Admin",
-                             text_color=self.TOPBAR_TEXT,
-                             font=("Segoe UI", 12, "normal"), height=12)
+                             text_color=self._tm.c("TOPBAR_TEXT"),
+                             font=(self._tm.font, 12, "normal"), height=12)
         lbl_nivel.place(x=64, y=28)
-        self._tw_add(lbl_nivel, text_color="TOPBAR_TEXT", fg_color="TOPBAR_BG")
+        self._tw_add(lbl_nivel, text_color=self._tm.c("TOPBAR_TEXT"), fg_color=self._tm.c("TOPBAR_BG"))
 
         # Botão de tema
         self._theme_btn = CTkButton(
             self.fr_topbar,
             text=self._theme_icon(),
             width=32, height=28,
-            font=("Segoe UI", 14),
-            fg_color=self.TOPBAR_BG,
-            hover_color=self.BLUE,
-            text_color=self.TOPBAR_TEXT,
+            font=(self._tm.font, 14),
+            fg_color=self._tm.c("TOPBAR_BG"),
+            hover_color=self._tm.c("BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
             corner_radius=8,
             command=self._toggle_theme,
         )
@@ -169,24 +163,24 @@ class ConsultaWindows(CTkToplevel, layout):
     def _build_tabview(self):
         self.tbv_consulta = CTkTabview(
             self, width=1502, height=580,
-            fg_color=self.WHITE, bg_color=self.GRAY_BG,
-            border_color=self.GRAY_LIGHT, border_width=1.5,
+            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
+            border_color=self._tm.c("GRAY_LIGHT"), border_width=1.5,
             corner_radius=8,
-            text_color=self.TOPBAR_TEXT,
-            segmented_button_fg_color=self.GRAY,
-            segmented_button_selected_color=self.BLUE,
-            segmented_button_selected_hover_color=self.DARK_BLUE,
-            segmented_button_unselected_color=self.GRAY_DARK,
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            segmented_button_fg_color=self._tm.c("GRAY"),
+            segmented_button_selected_color=self._tm.c("BLUE"),
+            segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
+            segmented_button_unselected_color=self._tm.c("GRAY_DARK"),
         )
         self.tbv_consulta.place(x=24, y=66)
         self._tw_add(self.tbv_consulta,
-                       fg_color="WHITE", bg_color="GRAY_BG",
-                       border_color="GRAY_LIGHT",
-                       text_color="TOPBAR_TEXT",
-                       segmented_button_fg_color="GRAY",
-                       segmented_button_selected_color="BLUE",
-                       segmented_button_selected_hover_color="DARK_BLUE",
-                       segmented_button_unselected_color="GRAY_DARK")
+                       fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
+                       border_color=self._tm.c("GRAY_LIGHT"),
+                       text_color=self._tm.c("TOPBAR_TEXT"),
+                       segmented_button_fg_color=self._tm.c("GRAY"),
+                       segmented_button_selected_color=self._tm.c("BLUE"),
+                       segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
+                       segmented_button_unselected_color=self._tm.c("GRAY_DARK"))
 
         self.tab_agendar_consulta = self.tbv_consulta.add("Agendar Consulta")
         self.tab_buscar_consulta  = self.tbv_consulta.add("Buscar Consulta")
@@ -196,11 +190,11 @@ class ConsultaWindows(CTkToplevel, layout):
     def agendar_consulta(self):
         fr = CTkFrame(self.tab_agendar_consulta,
                       width=1458, height=418,
-                      fg_color=self.BLUE_XL,
-                      border_color=self.BLUE, border_width=1,
+                      fg_color=self._tm.c("BLUE_XL"),
+                      border_color=self._tm.c("BLUE"), border_width=1,
                       corner_radius=6)
         fr.place(x=14, y=10)
-        self._tw_add(fr, fg_color="BLUE_XL", border_color="BLUE")
+        self._tw_add(fr, fg_color=self._tm.c("BLUE_XL"), border_color=self._tm.c("BLUE"))
 
         # ── DADOS DO PACIENTE ─────────────────────────────────────────────
         self._label(fr, "DADOS DO PACIENTE", 14, bold=True, x=16, y=18)
@@ -291,34 +285,34 @@ class ConsultaWindows(CTkToplevel, layout):
         # ── Botões de ação ────────────────────────────────────────────────
         bt_cancel = CTkButton(
             self.tbv_consulta, width=148, height=40, text="Cancelar",
-            text_color=self.BLUE, font=("Segoe UI", 12, "bold"),
-            fg_color=self.WHITE, hover_color=self.BLUE_XL,
-            border_color=self.BLUE, border_width=1.5,
+            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("WHITE"), hover_color=self._tm.c("BLUE_XL"),
+            border_color=self._tm.c("BLUE"), border_width=1.5,
             corner_radius=8, command=self.fechar_consulta,
         )
         bt_cancel.place(x=38, y=510)
-        self._tw_add(bt_cancel, text_color="BLUE", fg_color="WHITE",
-                       hover_color="BLUE_XL", border_color="BLUE")
+        self._tw_add(bt_cancel, text_color=self._tm.c("BLUE"), fg_color=self._tm.c("WHITE"),
+                       hover_color=self._tm.c("BLUE_XL"), border_color=self._tm.c("BLUE"))
 
         bt_clear = CTkButton(
             self.tbv_consulta, width=148, height=40, text="Limpar",
-            text_color=self.BLUE, font=("Segoe UI", 12, "bold"),
-            fg_color=self.BLUE_XL, hover_color=self.GRAY_LIGHT,
+            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("BLUE_XL"), hover_color=self._tm.c("GRAY_LIGHT"),
             corner_radius=8,
         )
         bt_clear.place(x=1144, y=510)
-        self._tw_add(bt_clear, text_color="BLUE", fg_color="BLUE_XL",
-                       hover_color="GRAY_LIGHT")
+        self._tw_add(bt_clear, text_color=self._tm.c("BLUE"), fg_color=self._tm.c("BLUE_XL"),
+                       hover_color=self._tm.c("GRAY_LIGHT"))
 
         bt_save = CTkButton(
             self.tbv_consulta, width=148, height=40, text="Agendar",
-            text_color=self.TOPBAR_TEXT, font=("Segoe UI", 12, "bold"),
-            fg_color=self.BLUE, hover_color=self.DARK_BLUE,
+            text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"),
             corner_radius=8,
         )
         bt_save.place(x=1312, y=510)
-        self._tw_add(bt_save, text_color="TOPBAR_TEXT",
-                       fg_color="BLUE", hover_color="DARK_BLUE")
+        self._tw_add(bt_save, text_color=self._tm.c("TOPBAR_TEXT"),
+                       fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"))
 
     # ── Callback de tema ──────────────────────────────────────────────────────
 

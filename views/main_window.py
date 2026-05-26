@@ -5,8 +5,8 @@ from theme_manager import ThemeManager
 
 class MainWindow(ctk.CTk):
 
-    def __init__(self, parent, controller):
-        super().__init__(parent)
+    def __init__(self, controller):
+        super().__init__()
         ThemeManager.__init__(self)
         self._themed_widgets: list[dict] = []
         self._tm = ThemeManager.get()
@@ -129,9 +129,9 @@ class MainWindow(ctk.CTk):
                      hover_color="RED_LIGHT",
                      border_color="GRAY_LIGHT")
 
-    def _nav_section(self, parent, label):
+    def _nav_section(self, label):
         lbl = ctk.CTkLabel(
-            parent,
+            self,
             text=label,
             text_color=self._tm.c("GRAY"),
             font=(self._tm.font, 10, "bold")
@@ -139,7 +139,7 @@ class MainWindow(ctk.CTk):
         lbl.pack(anchor="w", padx=20, pady=(12, 4))
         self._tw_add(lbl, text_color="GRAY")
 
-    def _nav_button(self, parent, text, icon_path=None, active=False, command=None):
+    def _nav_button(self, text, icon_path=None, active=False, command=None):
         icon = None
         if icon_path:
             try:
@@ -152,7 +152,7 @@ class MainWindow(ctk.CTk):
         hc = self._tm.c("DARK_BLUE") if active else self._tm.c("BLUE_XL")
 
         btn = ctk.CTkButton(
-            parent,
+            self,
             image=icon,
             compound="left",
             text=text,
@@ -265,11 +265,11 @@ class MainWindow(ctk.CTk):
     # ───────────────────────────────
     # CALLBACKS
     # ───────────────────────────────
-    def _open_cadastro(self):
-        self.controller.abrir_cadastro(self)
+    def _open_form(self):
+        self.controller.open_form(self)
 
-    def _open_consulta(self):
-        self.controller.abrir_consulta(self)
+    def _open_appointment(self):
+        self.controller.open_appointment(self)
 
     def _close_window(self):
         self._tm.unsubscribe(self._on_theme_change)

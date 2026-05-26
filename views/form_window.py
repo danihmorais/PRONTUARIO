@@ -1,17 +1,11 @@
-"""
-cadastro_window.py
-Janela de cadastro do MediSystem com suporte a modo claro/escuro.
-"""
-
 from customtkinter import *
 from tkinter import END
 from PIL import Image
 from tkcalendar import Calendar
-from layout import layout
 from theme_manager import ThemeManager
 
 
-class CadastroWindow(CTkToplevel, layout):
+class FormWindow(CTkToplevel):
 
     def __init__(self, parent, controller):
         self._themed_widgets: list[dict] = []
@@ -25,7 +19,7 @@ class CadastroWindow(CTkToplevel, layout):
         self.resizable(False, False)
 
         self._tm.subscribe(self._on_theme_change)
-        self.configure(fg_color=self.GRAY_BG)
+        self.configure(fg_color=self._tm.c("GRAY_BG"))
 
         self._build_topbar()
         self._build_tabview()
@@ -44,8 +38,8 @@ class CadastroWindow(CTkToplevel, layout):
     def _label(self, parent, text, font_size=12, bold=False, **place_kwargs):
         """Label padrão com registro automático de tema."""
         weight = "bold" if bold else "normal"
-        lbl = CTkLabel(parent, text=text, text_color=self.BLACK,
-                       font=("Segoe UI", font_size, weight))
+        lbl = CTkLabel(parent, text=text, text_color=self._tm.c("BLACK"),
+                       font=(self._tm.font, font_size, weight))
         lbl.place(**place_kwargs)
         self._tw_add(lbl, text_color="BLACK")
         return lbl
@@ -54,16 +48,16 @@ class CadastroWindow(CTkToplevel, layout):
                placeholder="", **place_kwargs):
         """Entry padrão com registro automático de tema."""
         state = "disabled" if disabled else "normal"
-        fg = self.GRAY_LIGHT if disabled else self.WHITE
+        fg = self._tm.c("GRAY_LIGHT") if disabled else self._tm.c("WHITE")
         ent = CTkEntry(
             parent, width=width, height=height,
-            fg_color=fg, bg_color=self.BLUE_XL,
+            fg_color=fg, bg_color=self._tm.c("BLUE_XL"),
             corner_radius=6,
-            border_color=self.GRAY_DARK, border_width=1,
-            text_color=self.BLACK,
-            font=("Segoe UI", 14, "normal"),
+            border_color=self._tm.c("GRAY_DARK"), border_width=1,
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 14, "normal"),
             placeholder_text=placeholder,
-            placeholder_text_color=self.GRAY,
+            placeholder_text_color=self._tm.c("GRAY"),
             state=state,
         )
         ent.place(**place_kwargs)
@@ -79,16 +73,16 @@ class CadastroWindow(CTkToplevel, layout):
         """ComboBox padrão com registro automático de tema."""
         cb = CTkComboBox(
             parent, width=width, height=32,
-            fg_color=self.WHITE, bg_color=self.BLUE_XL,
+            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
             corner_radius=6,
-            border_color=self.GRAY_DARK, border_width=1,
-            button_color=self.BLUE, button_hover_color=self.DARK_BLUE,
-            dropdown_fg_color=self.WHITE,
-            dropdown_hover_color=self.BLUE_XL,
-            dropdown_text_color=self.BLACK,
-            dropdown_font=("Segoe UI", 14, "normal"),
-            text_color=self.BLACK,
-            font=("Segoe UI", 14, "normal"),
+            border_color=self._tm.c("GRAY_DARK"), border_width=1,
+            button_color=self._tm.c("BLUE"), button_hover_color=self._tm.c("DARK_BLUE"),
+            dropdown_fg_color=self._tm.c("WHITE"),
+            dropdown_hover_color=self._tm.c("BLUE_XL"),
+            dropdown_text_color=self._tm.c("BLACK"),
+            dropdown_font=(self._tm.font, 14, "normal"),
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 14, "normal"),
             values=values,
         )
         cb.place(**place_kwargs)
@@ -104,8 +98,8 @@ class CadastroWindow(CTkToplevel, layout):
     def _section_frame(self, parent, width=1117, height=458):
         """Frame de seção com fundo azul claro."""
         fr = CTkFrame(parent, width=width, height=height,
-                      fg_color=self.BLUE_XL,
-                      border_color=self.BLUE, border_width=1,
+                      fg_color=self._tm.c("BLUE_XL"),
+                      border_color=self._tm.c("BLUE"), border_width=1,
                       corner_radius=6)
         fr.place(x=10, y=10)
         self._tw_add(fr, fg_color="BLUE_XL", border_color="BLUE")
@@ -116,8 +110,8 @@ class CadastroWindow(CTkToplevel, layout):
         btn = CTkButton(
             parent, width=32, height=32, text="", image=icon,
             compound="left",
-            fg_color=self.BLUE, bg_color=self.BLUE_XL,
-            hover_color=self.DARK_BLUE, corner_radius=6,
+            fg_color=self._tm.c("BLUE"), bg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("DARK_BLUE"), corner_radius=6,
             command=command,
         )
         btn.place(**place_kwargs)
@@ -129,9 +123,9 @@ class CadastroWindow(CTkToplevel, layout):
         """Trio de botões Cancelar / Limpar / Cadastrar."""
         bt_cancel = CTkButton(
             parent, width=148, height=40, text="Cancelar",
-            text_color=self.BLUE, font=("Segoe UI", 12, "bold"),
-            fg_color=self.WHITE, hover_color=self.BLUE_XL,
-            border_color=self.BLUE, border_width=1.5,
+            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("WHITE"), hover_color=self._tm.c("BLUE_XL"),
+            border_color=self._tm.c("BLUE"), border_width=1.5,
             corner_radius=8, command=self.fechar_cadastro,
         )
         bt_cancel.place(x=26, y=y)
@@ -140,8 +134,8 @@ class CadastroWindow(CTkToplevel, layout):
 
         bt_clear = CTkButton(
             parent, width=148, height=40, text="Limpar",
-            text_color=self.BLUE, font=("Segoe UI", 12, "bold"),
-            fg_color=self.BLUE_XL, hover_color=self.GRAY_LIGHT,
+            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("BLUE_XL"), hover_color=self._tm.c("GRAY_LIGHT"),
             corner_radius=8, command=limpar_cmd,
         )
         bt_clear.place(x=792, y=y)
@@ -150,8 +144,8 @@ class CadastroWindow(CTkToplevel, layout):
 
         bt_save = CTkButton(
             parent, width=148, height=40, text="Cadastrar",
-            text_color=self.TOPBAR_TEXT, font=("Segoe UI", 12, "bold"),
-            fg_color=self.BLUE, hover_color=self.DARK_BLUE,
+            text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 12, "bold"),
+            fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"),
             corner_radius=8,
         )
         bt_save.place(x=962, y=y)
@@ -204,9 +198,9 @@ class CadastroWindow(CTkToplevel, layout):
             text=self._theme_icon(),
             width=32, height=28,
             font=("Segoe UI", 14),
-            fg_color=self.TOPBAR_BG,
-            hover_color=self.BLUE,
-            text_color=self.TOPBAR_TEXT,
+            fg_color=self._tm.c("TOPBAR_BG"),
+            hover_color=self._tm.c("BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
             corner_radius=8,
             command=self._toggle_theme,
         )
@@ -217,24 +211,24 @@ class CadastroWindow(CTkToplevel, layout):
     def _build_tabview(self):
         self.tbv_cadastros = CTkTabview(
             self, width=1152, height=610,
-            fg_color=self.WHITE, bg_color=self.GRAY_BG,
-            border_color=self.GRAY_LIGHT, border_width=1.5,
+            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
+            border_color=self._tm.c("GRAY_LIGHT"), border_width=1.5,
             corner_radius=8,
-            text_color=self.TOPBAR_TEXT,
-            segmented_button_fg_color=self.GRAY,
-            segmented_button_selected_color=self.BLUE,
-            segmented_button_selected_hover_color=self.DARK_BLUE,
-            segmented_button_unselected_color=self.GRAY_DARK,
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            segmented_button_fg_color=self._tm.c("GRAY"),
+            segmented_button_selected_color=self._tm.c("BLUE"),
+            segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
+            segmented_button_unselected_color=self._tm.c("GRAY_DARK"),
         )
         self.tbv_cadastros.place(x=24, y=66)
         self._tw_add(self.tbv_cadastros,
-                       fg_color="WHITE", bg_color="GRAY_BG",
-                       border_color="GRAY_LIGHT",
-                       text_color="TOPBAR_TEXT",
-                       segmented_button_fg_color="GRAY",
-                       segmented_button_selected_color="BLUE",
-                       segmented_button_selected_hover_color="DARK_BLUE",
-                       segmented_button_unselected_color="GRAY_DARK")
+                       fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
+                       border_color=self._tm.c("GRAY_LIGHT"),
+                       text_color=self._tm.c("TOPBAR_TEXT"),
+                       segmented_button_fg_color=self._tm.c("GRAY"),
+                       segmented_button_selected_color=self._tm.c("BLUE"),
+                       segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
+                       segmented_button_unselected_color=self._tm.c("GRAY_DARK"))
 
         self.tab_cadastro_paciente = self.tbv_cadastros.add("Cadastro de Pacientes")
         self.tab_cadastro_medicos  = self.tbv_cadastros.add("Cadastro de Médicos")
@@ -502,7 +496,7 @@ class CadastroWindow(CTkToplevel, layout):
         self.bt_confirmar = CTkButton(
             self.pop, text="Confirmar",
             text_color=colors["TOPBAR_TEXT"],
-            font=("Segoe UI", 12, "bold"),
+            font=(self._tm.font, 12, "bold"),
             width=167, height=36,
             fg_color=colors["BLUE"],
             hover_color=colors["DARK_BLUE"],
@@ -513,7 +507,7 @@ class CadastroWindow(CTkToplevel, layout):
         self.bt_cancelar_cal = CTkButton(
             self.pop, text="Cancelar",
             text_color=colors["BLUE"],
-            font=("Segoe UI", 12, "bold"),
+            font=(self._tm.font, 12, "bold"),
             width=167, height=36,
             fg_color=colors["BLUE_XL"],
             hover_color=colors["GRAY_LIGHT"],

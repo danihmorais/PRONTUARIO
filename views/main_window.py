@@ -1,258 +1,280 @@
-"""
-main_window.py
-Janela de login do MediSystem com suporte a modo claro/escuro.
-"""
-
 import customtkinter as ctk
-from tkinter import END
 from PIL import Image
-import sqlite3
-from layout import layout
 from theme_manager import ThemeManager
 
 
-class MainWindow(ctk.CTk, layout):
+class MainWindow(ctk.CTk):
 
-    def __init__(self, controller):
-        super().__init__()
-        layout.__init__(self)
-
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        ThemeManager.__init__(self)
+        self._themed_widgets: list[dict] = []
+        self._tm = ThemeManager.get()
         self.controller = controller
 
-        width  = 900
-        height = 500
-
-        self.title("Bem-Vindo!")
-
-        x = (self.winfo_screenwidth()  // 2) - (width  // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-
-        self.geometry(f"{width}x{height}+{x}+{y}")
+        self.title("Prontuário - Dashboard")
+        self.configure(fg_color=self._tm.c("GRAY_BG"))
+        self.state("zoomed")
         self.resizable(False, False)
-        self.iconbitmap('assets/icon.ico')
+        self.attributes("-toolwindow", False)
 
-        self.monta_tabela_usuario()
-
-        # ── ThemeManager ──────────────────────────────────────────────────
-        self._tm = ThemeManager.get()
         self._tm.subscribe(self._on_theme_change)
 
-        # Sincroniza o CTK com o estado atual do tema
-        ctk.set_appearance_mode("dark" if self._tm.is_dark else "light")
+        self._build_sidebar()
+        self._build_topbar()
+        self._build_dashboard()
 
-        # ── Imagem de fundo ───────────────────────────────────────────────
-        self.bg_img = ctk.CTkImage(
-            light_image=Image.open('assets/BG_Inicial.png'),
-            dark_image=Image.open('assets/BG_Inicial.png'),
-            size=(579, 500)
+        self.protocol("WM_DELETE_WINDOW", self._close_window)
+
+    # ───────────────────────────────
+    # THEME REGISTRY
+    # ───────────────────────────────
+    def _tw_add(self, widget, **color_keys):
+        self._themed_widgets.append({
+            "widget": widget,
+            "keys": color_keys
+        })
+
+    # ───────────────────────────────
+    # SIDEBAR
+    # ───────────────────────────────
+    def _build_sidebar(self):
+        sb = ctk.CTkFrame(
+            self,
+            width=220,
+            height=768,
+            fg_color=self._tm.c("WHITE"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
+            corner_radius=0
         )
-        self.lb_image = ctk.CTkLabel(
-            self, image=self.bg_img, text="", fg_color=self.WHITE)
-        self.lb_image.place(x=0, y=0)
+        sb.place(x=0, y=0)
+        sb.pack_propagate(False)
+        self._tw_add(sb, fg_color="WHITE", border_color="GRAY_LIGHT")
 
-        # ── Logo ──────────────────────────────────────────────────────────
-        self.logo_img = ctk.CTkImage(
-            light_image=Image.open('assets/logo.png'),
-            dark_image=Image.open('assets/logo.png'),
-            size=(70, 70)
+        # LOGO
+        logo_frame = ctk.CTkFrame(sb, fg_color=self._tm.c("WHITE"), corner_radius=0)
+        logo_frame.pack(fill="x", padx=20, pady=(28, 20))
+        self._tw_add(logo_frame, fg_color="WHITE")
+
+        logo_icon = ctk.CTkFrame(
+            logo_frame,
+            width=32,
+            height=32,
+            fg_color=self._tm.c("BLUE"),
+            corner_radius=8
         )
-        self.lb_logo = ctk.CTkLabel(
-            self, image=self.logo_img, text="", fg_color=self.WHITE)
-        self.lb_logo.place(x=579 + (321 // 2) - 35, y=24)
+        logo_icon.pack(side="left")
+        self._tw_add(logo_icon, fg_color="BLUE")
 
-        # ── Frame do formulário ───────────────────────────────────────────
-        self.fr_login = ctk.CTkFrame(
-            self, width=321, height=340,
-            fg_color=self.BLUE_XL,
-            corner_radius=16
+        img = Image.open("assets/logo.png")
+        logo_img = ctk.CTkImage(light_image=img, dark_image=img, size=(20, 20))
+
+        lbl_logo = ctk.CTkLabel(
+            logo_icon,
+            image=logo_img,
+            text=""
         )
-        self.fr_login.place(x=579, y=230)
+        lbl_logo.place(relx=0.5, rely=0.5, anchor="center")
 
-        # ── Textos ────────────────────────────────────────────────────────
-        self.titulo = ctk.CTkLabel(
-            self, text='Bem-vindo de\nvolta!',
-            text_color=self.BLACK,
-            font=('Segoe UI', 28, 'bold'), justify='left'
-        )
-        self.titulo.place(x=610, y=110)
+        self.logo_img = logo_img
 
-        self.subtitulo = ctk.CTkLabel(
-            self, text='Faça o login para acessar sua conta:',
-            text_color=self.BLACK,
-            font=('Segoe UI', 12)
-        )
-        self.subtitulo.place(x=610, y=190)
+        # DIV
+        div1 = ctk.CTkFrame(sb, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
+        div1.pack(fill="x")
+        self._tw_add(div1, fg_color="GRAY_LIGHT")
 
-        self.lb_usuario = ctk.CTkLabel(
-            self, text='Usuário',
-            text_color=self.BLACK, fg_color="transparent",
-            font=('Segoe UI', 14)
-        )
-        self.lb_usuario.place(x=610, y=250)
+        self._nav_section(sb, "PRINCIPAL")
 
-        # ── Entradas ──────────────────────────────────────────────────────
-        self.entry_usuario = ctk.CTkEntry(
-            self, width=260, height=32,
-            font=('Segoe UI', 14),
-            text_color=self.BLACK,
-            border_color=self.DARK_BLUE, border_width=1.5,
+        self.bt_dashboard = self._nav_button(sb, "  Dashboard", "assets/icons/graph.png", active=True)
+        self.bt_consultas = self._nav_button(sb, "  Consultas", "assets/icons/clipboard.png",
+                                             command=self._open_consulta)
+        self.bt_cadastro = self._nav_button(sb, "  Cadastro", "assets/icons/personalcard.png",
+                                            command=self._open_cadastro)
+        self.bt_pacientes = self._nav_button(sb, "  Pacientes", "assets/icons/people.png")
+        self.bt_medicos = self._nav_button(sb, "  Médicos", "assets/icons/personalcard.png")
+
+        div2 = ctk.CTkFrame(sb, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
+        div2.pack(fill="x", padx=16, pady=(8, 0))
+        self._tw_add(div2, fg_color="GRAY_LIGHT")
+
+        self._nav_section(sb, "SISTEMA")
+
+        self.bt_exportar = self._nav_button(sb, "  Exportar dados", "assets/icons/document.png")
+        self.bt_config = self._nav_button(sb, "  Configurações", "assets/icons/setting.png")
+
+        footer = ctk.CTkFrame(sb, fg_color=self._tm.c("WHITE"), corner_radius=0)
+        footer.pack(side="bottom", fill="x", padx=12, pady=12)
+        self._tw_add(footer, fg_color="WHITE")
+
+        self.bt_logout = ctk.CTkButton(
+            footer,
+            text="  Sair",
+            text_color=self._tm.c("RED"),
+            font=(self._tm.font, 12),
+            width=196,
+            height=34,
+            fg_color=self._tm.c("WHITE"),
+            hover_color=self._tm.c("RED_LIGHT"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
             corner_radius=8,
-            fg_color=self.WHITE,
-            placeholder_text='Ex. usuario123',
-            placeholder_text_color=self.GRAY
+            anchor="w",
+            command=self._logout
         )
-        self.entry_usuario.place(x=610, y=280)
+        self.bt_logout.pack(fill="x")
+        self._tw_add(self.bt_logout,
+                     text_color="RED",
+                     fg_color="WHITE",
+                     hover_color="RED_LIGHT",
+                     border_color="GRAY_LIGHT")
 
-        self.lb_senha = ctk.CTkLabel(
-            self, text='Senha',
-            text_color=self.BLACK,
-            font=('Segoe UI', 14)
+    def _nav_section(self, parent, label):
+        lbl = ctk.CTkLabel(
+            parent,
+            text=label,
+            text_color=self._tm.c("GRAY"),
+            font=(self._tm.font, 10, "bold")
         )
-        self.lb_senha.place(x=610, y=320)
+        lbl.pack(anchor="w", padx=20, pady=(12, 4))
+        self._tw_add(lbl, text_color="GRAY")
 
-        self.entry_senha = ctk.CTkEntry(
-            self, width=260, height=32,
-            font=('Segoe UI', 14),
-            text_color=self.BLACK,
-            border_color=self.DARK_BLUE, border_width=1.5,
+    def _nav_button(self, parent, text, icon_path=None, active=False, command=None):
+        icon = None
+        if icon_path:
+            try:
+                icon = ctk.CTkImage(Image.open(icon_path))
+            except Exception:
+                icon = None
+
+        fg = self._tm.c("BLUE") if active else self._tm.c("WHITE")
+        tc = self._tm.c("TOPBAR_TEXT") if active else self._tm.c("GRAY_DARK")
+        hc = self._tm.c("DARK_BLUE") if active else self._tm.c("BLUE_XL")
+
+        btn = ctk.CTkButton(
+            parent,
+            image=icon,
+            compound="left",
+            text=text,
+            text_color=tc,
+            font=(self._tm.font, 13),
+            width=196,
+            height=38,
+            fg_color=fg,
+            hover_color=hc,
             corner_radius=8,
-            fg_color=self.WHITE,
-            placeholder_text='Insira sua senha',
-            placeholder_text_color=self.GRAY,
-            show='*'
+            anchor="w",
+            command=command
         )
-        self.entry_senha.place(x=610, y=350)
+        btn.pack(padx=12, pady=2)
 
-        # ── Botão entrar ──────────────────────────────────────────────────
-        self.bt_entrar = ctk.CTkButton(
-            self, width=220, height=34,
-            text='Entrar',
-            font=('Segoe UI', 12, 'bold'),
-            fg_color=self.BLUE, hover_color=self.DARK_BLUE,
-            corner_radius=8,
-            command=self.login
-        )
-        self.bt_entrar.place(x=630, y=400)
+        self._tw_add(btn,
+                     fg_color="BLUE" if active else "WHITE",
+                     text_color="TOPBAR_TEXT" if active else "GRAY_DARK",
+                     hover_color="DARK_BLUE" if active else "BLUE_XL")
 
-        # ── Botão de tema (canto superior direito do painel) ──────────────
+        return btn
+
+    # ───────────────────────────────
+    # TOPBAR
+    # ───────────────────────────────
+    def _build_topbar(self):
+        topbar = ctk.CTkFrame(self, height=56, fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
+        topbar.place(x=220, y=0, relwidth=1)
+        self._tw_add(topbar, fg_color="TOPBAR_BG")
+
+        ctk.CTkLabel(
+            topbar,
+            text="Início /",
+            text_color=self._tm.c("TOPBAR_MUTED"),
+            font=(self._tm.font, 13)
+        ).place(x=24, y=18)
+
+        ctk.CTkLabel(
+            topbar,
+            text="Dashboard",
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            font=(self._tm.font, 14, "bold")
+        ).place(x=80, y=18)
+
         self._theme_btn = ctk.CTkButton(
-            self,
+            topbar,
             text=self._theme_icon(),
-            width=32, height=28,
-            font=('Segoe UI', 14),
-            fg_color=self.BLUE_XL,
-            hover_color=self.GRAY_LIGHT,
-            text_color=self.GRAY_DARK,
+            width=38,
+            height=32,
+            font=(self._tm.font, 16),
+            fg_color=self._tm.c("TOPBAR_BG"),
+            hover_color=self._tm.c("BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
             corner_radius=8,
-            command=self._toggle_theme,
+            command=self._toggle_theme
         )
-        self._theme_btn.place(x=868, y=8)
+        self._theme_btn.place(relx=1.0, x=-56, y=12)
 
-        # ── Rodapé ────────────────────────────────────────────────────────
-        self.subtitulo_rodape = ctk.CTkLabel(
-            self,
-            text='Dúvidas ou problemas? Entre em contato\ncom nosso suporte técnico.',
-            text_color=self.GRAY,
-            font=('Segoe UI', 10), justify='center'
-        )
-        self.subtitulo_rodape.place(x=648, y=456)
-
-        # Aplica cores iniciais
-        self._on_theme_change(self._tm.colors)
-
-    # ── Tema ──────────────────────────────────────────────────────────────────
-
-    def _theme_icon(self) -> str:
+    def _theme_icon(self):
         return "☀️" if self._tm.is_dark else "🌙"
 
     def _toggle_theme(self):
-        self._tm.toggle()  # dispara _on_theme_change via subscribe
+        self._tm.toggle()
 
+    # ───────────────────────────────
+    # DASHBOARD
+    # ───────────────────────────────
+    def _build_dashboard(self):
+        x_start = 240
+        y_start = 80
+
+        ctk.CTkLabel(
+            self,
+            text="Visão geral",
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 20, "bold")
+        ).place(x=x_start, y=y_start)
+
+        ctk.CTkLabel(
+            self,
+            text="Bem-vindo de volta, Bruno",
+            text_color=self._tm.c("GRAY_DARK"),
+            font=(self._tm.font, 13)
+        ).place(x=x_start, y=y_start + 30)
+
+    # ───────────────────────────────
+    # THEME UPDATE
+    # ───────────────────────────────
     def _on_theme_change(self, colors: dict):
-        """Recolore todos os widgets da janela de login."""
-        self.configure(fg_color=colors["WHITE"])
+        self.configure(fg_color=colors["GRAY_BG"])
 
-        self.lb_image.configure(fg_color=colors["WHITE"])
-        self.lb_logo.configure(fg_color=colors["WHITE"])
-
-        self.fr_login.configure(fg_color=colors["BLUE_XL"])
-
-        self.titulo.configure(text_color=colors["BLACK"])
-        self.subtitulo.configure(text_color=colors["BLACK"])
-        self.lb_usuario.configure(text_color=colors["BLACK"])
-        self.lb_senha.configure(text_color=colors["BLACK"])
-        self.subtitulo_rodape.configure(text_color=colors["GRAY"])
-
-        self.entry_usuario.configure(
-            fg_color=colors["WHITE"],
-            text_color=colors["BLACK"],
-            border_color=colors["DARK_BLUE"],
-        )
-        self.entry_senha.configure(
-            fg_color=colors["WHITE"],
-            text_color=colors["BLACK"],
-            border_color=colors["DARK_BLUE"],
-        )
-
-        self.bt_entrar.configure(
-            fg_color=colors["BLUE"],
-            hover_color=colors["DARK_BLUE"],
-            text_color=colors["TOPBAR_TEXT"],
-        )
+        for entry in self._themed_widgets:
+            widget = entry["widget"]
+            keys = entry["keys"]
+            try:
+                widget.configure(**{
+                    param: colors[color_key]
+                    for param, color_key in keys.items()
+                })
+            except Exception:
+                pass
 
         self._theme_btn.configure(
             text=self._theme_icon(),
-            fg_color=colors["BLUE_XL"],
-            hover_color=colors["GRAY_LIGHT"],
-            text_color=colors["GRAY_DARK"],
+            fg_color=colors["TOPBAR_BG"],
+            hover_color=colors["BLUE"],
+            text_color=colors["TOPBAR_TEXT"]
         )
 
-    # ── Login / BD ────────────────────────────────────────────────────────────
+    # ───────────────────────────────
+    # CALLBACKS
+    # ───────────────────────────────
+    def _open_cadastro(self):
+        self.controller.abrir_cadastro(self)
 
-    def login(self):
-        self.conecta_bd()
+    def _open_consulta(self):
+        self.controller.abrir_consulta(self)
 
-        usuario = self.entry_usuario.get()
-        senha   = self.entry_senha.get()
+    def _close_window(self):
+        self._tm.unsubscribe(self._on_theme_change)
+        self.quit()
 
-        self.cursor.execute(
-            "SELECT usuario FROM usuarios WHERE usuario = ? AND senha = ?",
-            (usuario, senha)
-        )
-        resultado = self.cursor.fetchall()
-
-        if resultado:
-            self._tm.unsubscribe(self._on_theme_change)
-            self.controller.abrir_principal(self)
-        else:
-            self.entry_usuario.delete(0, END)
-            self.entry_senha.delete(0, END)
-
-    def conecta_bd(self):
-        self.conn   = sqlite3.connect('usuarios.bd')
-        self.cursor = self.conn.cursor()
-
-    def desconecta_bd(self):
-        self.conn.close()
-
-    def monta_tabela_usuario(self):
-        self.conecta_bd()
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id_usuario INTEGER PRIMARY KEY,
-                usuario    TEXT NOT NULL,
-                senha      TEXT NOT NULL,
-                nivel      TEXT NOT NULL
-            );
-        """)
-        self.conn.commit()
-        self.desconecta_bd()
-
-    def cadastro_usuario(self):
-        self.conecta_bd()
-        self.cursor.execute(
-            "INSERT INTO usuarios (usuario, senha, nivel) VALUES (?, ?, ?)",
-            (self.entry_usuario.get(), self.entry_senha.get(), "Admin")
-        )
-        self.conn.commit()
-        self.desconecta_bd()
+    def _logout(self):
+        self._tm.unsubscribe(self._on_theme_change)
+        self.controller.realizar_logout(self)

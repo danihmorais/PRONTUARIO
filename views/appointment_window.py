@@ -1,9 +1,22 @@
-import customtkinter as ctk
+import re
 import sqlite3
+import customtkinter as ctk
 from tkinter import messagebox
 from tkcalendar import Calendar
 from theme_manager import ThemeManager
 from config import DB_PATH
+
+
+def _only_digits(s):
+    return re.sub(r"\D", "", str(s))
+
+
+_STATUS_COLORS = {
+    "Pendente":   ("#FEF3C7", "#92400E"),
+    "Confirmada": ("#D1FAE5", "#065F46"),
+    "Cancelada":  ("#FEE2E2", "#991B1B"),
+    "Realizada":  ("#EDE9FE", "#5B21B6"),
+}
 
 
 class AppointmentWindow(ctk.CTkFrame):
@@ -12,36 +25,33 @@ class AppointmentWindow(ctk.CTkFrame):
         self.controller = controller
         self._tm = ThemeManager.get()
         self._calendar_target = None
+        self._selected_consulta_id = None
 
-        # 👇 tema reativo
         self._tm.subscribe(self._apply_theme)
-
         self._build_ui()
         self.carregar_dados()
 
-    # =========================
-    # UI
-    # =========================
+    # ── UI ────────────────────────────────────────────────────────────────────
+
     def _build_ui(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", pady=(0, 20))
 
-        self.title = ctk.CTkLabel(
-            header,
-            text="Agendamento de Consultas",
+        self.title_lbl = ctk.CTkLabel(
+            header, text="Agendamento de Consultas",
             font=(self._tm.font, 24, "bold"),
             text_color=self._tm.c("BLACK"),
         )
-        self.title.pack(anchor="w")
+        self.title_lbl.pack(anchor="w")
 
-        self.subtitle = ctk.CTkLabel(
-            header,
-            text="Agende e gerencie as sessões de fisioterapia",
+        self.subtitle_lbl = ctk.CTkLabel(
+            header, text="Agende e gerencie as sessões de fisioterapia",
             font=(self._tm.font, 13),
             text_color=self._tm.c("GRAY"),
         )
-        self.subtitle.pack(anchor="w", pady=(4, 0))
+        self.subtitle_lbl.pack(anchor="w", pady=(4, 0))
 
+        # container scrollável
         self.container = ctk.CTkScrollableFrame(
             self,
             fg_color=self._tm.c("WHITE"),
@@ -51,265 +61,364 @@ class AppointmentWindow(ctk.CTkFrame):
         )
         self.container.pack(fill="both", expand=True)
 
-        # ================= FORM =================
-        form_frame = ctk.CTkFrame(self.container, fg_color="transparent")
-        form_frame.pack(fill="x", padx=20, pady=20)
+        self._build_form()
+        self._build_lista()
 
-        form_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+    def _build_form(self):
+        form = ctk.CTkFrame(self.container, fg_color="transparent")
+        form.pack(fill="x", padx=20, pady=20)
+        form.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-        self.cb_paciente = self._combo(form_frame, "Paciente *", 0, 0, [], 2)
-        self.cb_fisio = self._combo(form_frame, "Fisioterapeuta *", 0, 2, [], 2)
+        # Paciente
+        self._lbl(form, "Paciente *", 0, 0)
+        self.cb_paciente = self._combo_raw(form, 1, 0, 2)
 
-        self.ent_data = self._field(form_frame, "Data da Consulta *", 1, 0, calendar=True)
-        self.ent_hora = self._field(form_frame, "Horário *", 1, 1)
-        self.cb_convenio = self._combo(
-            form_frame, "Convênio", 1, 2,
-            ["Particular", "Plano de Saúde", "SUS"], 1
+        # Fisioterapeuta
+        self._lbl(form, "Fisioterapeuta *", 0, 2)
+        self.cb_fisio = self._combo_raw(form, 1, 2, 2)
+
+        # Data
+        self._lbl(form, "Data *", 2, 0)
+        self.ent_data = ctk.CTkEntry(form, height=36)
+        self.ent_data.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 12))
+        ctk.CTkButton(
+            form, text="📅", width=36, height=36,
+            fg_color=self._tm.c("BLUE"),
+            hover_color=self._tm.c("DARK_BLUE"),
+            command=lambda: self.pop_calendario(self.ent_data)
+        ).grid(row=3, column=0, sticky="e", padx=10, pady=(0, 12))
+
+        # Horário
+        self._lbl(form, "Horário * (HH:MM)", 2, 1)
+        self.ent_hora = ctk.CTkEntry(form, height=36, placeholder_text="08:00")
+        self.ent_hora.grid(row=3, column=1, sticky="ew", padx=10, pady=(0, 12))
+
+        # Convênio
+        self._lbl(form, "Convênio", 2, 2)
+        self.cb_convenio = self._combo_raw(
+            form, 3, 2, 1,
+            values=["Particular", "Plano de Saúde", "SUS"]
         )
-        self.ent_plano = self._field(form_frame, "Nome do Plano", 1, 3)
 
-        self.ent_obs = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Observações adicionais",
-            height=36,
-        )
-        self.ent_obs.grid(row=5, column=0, columnspan=4, sticky="ew", padx=10, pady=(15, 0))
+        # Plano
+        self._lbl(form, "Nome do Plano", 2, 3)
+        self.ent_plano = ctk.CTkEntry(form, height=36)
+        self.ent_plano.grid(row=3, column=3, sticky="ew", padx=10, pady=(0, 12))
 
-        # ================= BOTÕES =================
+        # Observação
+        self._lbl(form, "Observações", 4, 0)
+        self.ent_obs = ctk.CTkEntry(form, height=36, placeholder_text="Observações adicionais")
+        self.ent_obs.grid(row=5, column=0, columnspan=4, sticky="ew", padx=10, pady=(0, 12))
+
+        # Botões
         btn_frame = ctk.CTkFrame(self.container, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=10)
+        btn_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         ctk.CTkButton(
-            btn_frame,
-            text="Agendar Consulta",
+            btn_frame, text="✅  Agendar Consulta",
             height=40,
+            fg_color=self._tm.c("BLUE"),
+            hover_color=self._tm.c("DARK_BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            font=(self._tm.font, 13, "bold"),
             command=self.agendar,
         ).pack(side="right")
 
         ctk.CTkButton(
-            btn_frame,
-            text="Atualizar Listas",
+            btn_frame, text="🔄  Atualizar",
             height=40,
+            fg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("GRAY_LIGHT"),
+            text_color=self._tm.c("BLUE"),
+            font=(self._tm.font, 13, "bold"),
             command=self.carregar_dados,
         ).pack(side="right", padx=10)
 
-        # ================= LISTA =================
-        list_frame = ctk.CTkFrame(self.container, fg_color="transparent")
-        list_frame.pack(fill="both", expand=True, padx=20, pady=20)
+    def _build_lista(self):
+        # Cabeçalho da lista
+        lf = ctk.CTkFrame(self.container, fg_color="transparent")
+        lf.pack(fill="x", padx=20, pady=(10, 0))
 
         ctk.CTkLabel(
-            list_frame,
-            text="Consultas Agendadas",
+            lf, text="Consultas Agendadas",
             font=(self._tm.font, 16, "bold"),
             text_color=self._tm.c("BLACK"),
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(side="left")
+
+        # filtro de status
+        self.cb_filtro = ctk.CTkComboBox(
+            lf,
+            values=["Todas", "Pendente", "Confirmada", "Cancelada", "Realizada"],
+            width=160, height=32,
+            fg_color=self._tm.c("GRAY_BG"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            text_color=self._tm.c("BLACK"),
+            button_color=self._tm.c("BLUE"),
+            command=lambda _: self.carregar_dados()
+        )
+        self.cb_filtro.set("Todas")
+        self.cb_filtro.pack(side="right")
+
+        ctk.CTkLabel(lf, text="Filtrar: ",
+                     text_color=self._tm.c("GRAY"),
+                     font=(self._tm.font, 12)).pack(side="right", padx=(0, 4))
+
+        # header colunas
+        hdr = ctk.CTkFrame(self.container,
+                           fg_color=self._tm.c("BLUE_XL"), corner_radius=6)
+        hdr.pack(fill="x", padx=20, pady=(8, 2))
+        for txt, w in [("Paciente",200), ("Fisioterapeuta",180),
+                       ("Data",100), ("Hora",70), ("Status",110), ("Ações",140)]:
+            ctk.CTkLabel(hdr, text=txt, width=w, anchor="w",
+                         font=(self._tm.font, 12, "bold"),
+                         text_color=self._tm.c("DARK_BLUE")).pack(side="left", padx=6, pady=6)
 
         self.tabela_consultas = ctk.CTkScrollableFrame(
-            list_frame,
+            self.container,
             fg_color=self._tm.c("GRAY_BG"),
             corner_radius=8,
+            height=280,
         )
-        self.tabela_consultas.pack(fill="both", expand=True)
+        self.tabela_consultas.pack(fill="x", padx=20, pady=(0, 20))
 
-    # =========================
-    # COMPONENTES
-    # =========================
-    def _field(self, parent, label, row, col, colspan=1, calendar=False):
+    # ── helpers ───────────────────────────────────────────────────────────────
+
+    def _lbl(self, parent, text, row, col):
         ctk.CTkLabel(
-            parent,
-            text=label,
+            parent, text=text,
             font=(self._tm.font, 12, "bold"),
             text_color=self._tm.c("GRAY_DARK"),
-        ).grid(row=row * 2, column=col, sticky="w", padx=10)
+        ).grid(row=row, column=col, sticky="w", padx=10)
 
-        entry = ctk.CTkEntry(parent, height=36)
-        entry.grid(
-            row=row * 2 + 1,
-            column=col,
-            columnspan=colspan,
-            sticky="ew",
-            padx=10,
-            pady=(0, 15),
-        )
-
-        if calendar:
-            btn = ctk.CTkButton(
-                parent,
-                text="📅",
-                width=36,
-                height=36,
-                command=lambda: self.pop_calendario(entry),
-            )
-            btn.grid(row=row * 2 + 1, column=col + colspan - 1, sticky="e", padx=10)
-
-        return entry
-
-    def _combo(self, parent, label, row, col, values, colspan=1):
-        ctk.CTkLabel(
+    def _combo_raw(self, parent, row, col, colspan=1, values=None):
+        cb = ctk.CTkComboBox(
             parent,
-            text=label,
-            font=(self._tm.font, 12, "bold"),
-            text_color=self._tm.c("GRAY_DARK"),
-        ).grid(row=row * 2, column=col, sticky="w", padx=10)
-
-        combo = ctk.CTkComboBox(
-            parent,
-            values=values,
+            values=values or [],
             fg_color=self._tm.c("GRAY_BG"),
             border_color=self._tm.c("GRAY_LIGHT"),
             dropdown_fg_color=self._tm.c("WHITE"),
             dropdown_text_color=self._tm.c("BLACK"),
             button_color=self._tm.c("BLUE"),
             button_hover_color=self._tm.c("DARK_BLUE"),
+            text_color=self._tm.c("BLACK"),
+            height=36,
         )
+        cb.grid(row=row, column=col, columnspan=colspan,
+                sticky="ew", padx=10, pady=(0, 12))
+        cb.set(values[0] if values else "")
+        return cb
 
-        combo.grid(
-            row=row * 2 + 1,
-            column=col,
-            columnspan=colspan,
-            sticky="ew",
-            padx=10,
-            pady=(0, 15),
-        )
+    # ── tema reativo ──────────────────────────────────────────────────────────
 
-        combo.set("")  # <- ESSENCIAL
-
-        return combo
-
-    # =========================
-    # TEMA REATIVO
-    # =========================
     def _apply_theme(self, colors):
-        self.configure(fg_color="transparent")
-
         self.container.configure(
             fg_color=colors["WHITE"],
             border_color=colors["GRAY_LIGHT"],
         )
+        self.tabela_consultas.configure(fg_color=colors["GRAY_BG"])
 
-        self.tabela_consultas.configure(
-            fg_color=colors["GRAY_BG"]
-        )
+    # ── dados ─────────────────────────────────────────────────────────────────
 
-        for cb in [self.cb_paciente, self.cb_fisio, self.cb_convenio]:
-            cb.configure(
-                fg_color=colors["GRAY_BG"],
-                text_color=colors["BLACK"],
-                border_color=colors["GRAY_LIGHT"],
-                dropdown_fg_color=colors["WHITE"],
-                dropdown_text_color=colors["BLACK"],
-                button_color=colors["BLUE"],
-                button_hover_color=colors["DARK_BLUE"],
-            )
-
-        for ent in [self.ent_data, self.ent_hora, self.ent_plano, self.ent_obs]:
-            ent.configure(
-                fg_color=colors["GRAY_BG"],
-                text_color=colors["BLACK"],
-                border_color=colors["GRAY_LIGHT"],
-            )
-
-    # =========================
-    # DADOS
-    # =========================
     def carregar_dados(self):
         try:
             conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            cur  = conn.cursor()
 
-            cursor.execute("SELECT id, nome, cpf FROM pacientes ORDER BY nome")
-            self.pacientes_list = cursor.fetchall()
+            cur.execute("SELECT id, nome FROM pacientes ORDER BY nome")
+            self.pacientes_list = cur.fetchall()
             self.cb_paciente.configure(
-                values=[f"{p[0]} - {p[1]}" for p in self.pacientes_list]
+                values=[f"{p[0]} — {p[1]}" for p in self.pacientes_list]
             )
 
-            cursor.execute("SELECT id, nome, crefito FROM fisioterapeutas ORDER BY nome")
-            self.fisios_list = cursor.fetchall()
+            cur.execute("SELECT id, nome FROM fisioterapeutas ORDER BY nome")
+            self.fisios_list = cur.fetchall()
             self.cb_fisio.configure(
-                values=[f"{f[0]} - {f[1]}" for f in self.fisios_list]
+                values=[f"{f[0]} — {f[1]}" for f in self.fisios_list]
             )
 
-            self.atualizar_tabela(cursor)
+            self._render_tabela(cur)
             conn.close()
-
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
-    # =========================
-    # TABELA
-    # =========================
-    def atualizar_tabela(self, cursor):
+    def _render_tabela(self, cursor):
         for w in self.tabela_consultas.winfo_children():
             w.destroy()
 
-        cursor.execute("""
+        filtro = self.cb_filtro.get()
+        query = """
             SELECT c.id, p.nome, f.nome, c.data_consulta, c.horario, c.status
             FROM consultas c
-            JOIN pacientes p ON c.id_paciente = p.id
-            JOIN fisioterapeutas f ON c.id_fisioterapeuta = f.id
-            ORDER BY c.data_consulta DESC, c.horario DESC
-        """)
+            JOIN pacientes p       ON c.id_paciente        = p.id
+            JOIN fisioterapeutas f ON c.id_fisioterapeuta  = f.id
+        """
+        params = ()
+        if filtro != "Todas":
+            query += " WHERE c.status = ?"
+            params = (filtro,)
+        query += " ORDER BY c.data_consulta DESC, c.horario DESC"
 
-        for c in cursor.fetchall():
-            row = ctk.CTkFrame(self.tabela_consultas, fg_color="transparent")
-            row.pack(fill="x", padx=6, pady=2)
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
 
-            ctk.CTkLabel(row, text=c[1], width=200).grid(row=0, column=0)
-            ctk.CTkLabel(row, text=c[2], width=200).grid(row=0, column=1)
-            ctk.CTkLabel(row, text=c[3], width=120).grid(row=0, column=2)
-            ctk.CTkLabel(row, text=c[4], width=80).grid(row=0, column=3)
-            ctk.CTkLabel(row, text=c[5], width=100).grid(row=0, column=4)
+        if not rows:
+            ctk.CTkLabel(
+                self.tabela_consultas,
+                text="Nenhuma consulta encontrada.",
+                font=(self._tm.font, 13),
+                text_color=self._tm.c("GRAY"),
+            ).pack(pady=20)
+            return
 
-    # =========================
-    # AÇÕES
-    # =========================
+        for idx, (cid, pac, fisio, data, hora, status) in enumerate(rows):
+            bg = self._tm.c("WHITE") if idx % 2 == 0 else self._tm.c("GRAY_BG")
+            row = ctk.CTkFrame(self.tabela_consultas, fg_color=bg, corner_radius=4)
+            row.pack(fill="x", padx=4, pady=2)
+
+            ctk.CTkLabel(row, text=pac,    width=200, anchor="w",
+                         font=(self._tm.font, 12), text_color=self._tm.c("BLACK")).pack(side="left", padx=6)
+            ctk.CTkLabel(row, text=fisio,  width=180, anchor="w",
+                         font=(self._tm.font, 12), text_color=self._tm.c("BLACK")).pack(side="left")
+            ctk.CTkLabel(row, text=data,   width=100, anchor="w",
+                         font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK")).pack(side="left")
+            ctk.CTkLabel(row, text=hora,   width=70,  anchor="w",
+                         font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK")).pack(side="left")
+
+            sbg, stc = _STATUS_COLORS.get(status, ("#E5E7EB", "#374151"))
+            ctk.CTkLabel(row, text=status, width=110,
+                         corner_radius=12, fg_color=sbg, text_color=stc,
+                         font=(self._tm.font, 11, "bold")).pack(side="left", padx=4)
+
+            # Ações
+            acao_frame = ctk.CTkFrame(row, fg_color="transparent")
+            acao_frame.pack(side="right", padx=6)
+
+            ctk.CTkButton(
+                acao_frame, text="✔", width=32, height=28,
+                fg_color=self._tm.c("SUCCESS_BG"),
+                hover_color="#bbf7d0",
+                text_color=self._tm.c("SUCCESS"),
+                font=(self._tm.font, 13, "bold"),
+                command=lambda i=cid: self._mudar_status(i, "Confirmada"),
+            ).pack(side="left", padx=2)
+
+            ctk.CTkButton(
+                acao_frame, text="✘", width=32, height=28,
+                fg_color=self._tm.c("RED_LIGHT"),
+                hover_color="#fecaca",
+                text_color=self._tm.c("RED"),
+                font=(self._tm.font, 13, "bold"),
+                command=lambda i=cid: self._mudar_status(i, "Cancelada"),
+            ).pack(side="left", padx=2)
+
+            ctk.CTkButton(
+                acao_frame, text="🗑", width=32, height=28,
+                fg_color=self._tm.c("GRAY_LIGHT"),
+                hover_color=self._tm.c("GRAY"),
+                text_color=self._tm.c("GRAY_DARK"),
+                font=(self._tm.font, 13),
+                command=lambda i=cid, n=pac: self._excluir(i, n),
+            ).pack(side="left", padx=2)
+
+    # ── ações ─────────────────────────────────────────────────────────────────
+
     def agendar(self):
+        pac_str  = self.cb_paciente.get().strip()
+        fis_str  = self.cb_fisio.get().strip()
+        data     = self.ent_data.get().strip()
+        hora     = self.ent_hora.get().strip()
+        convenio = self.cb_convenio.get()
+        plano    = self.ent_plano.get().strip()
+        obs      = self.ent_obs.get().strip()
+
+        erros = []
+        if not pac_str or "—" not in pac_str:
+            erros.append("• Selecione um paciente.")
+        if not fis_str or "—" not in fis_str:
+            erros.append("• Selecione um fisioterapeuta.")
+        if not data:
+            erros.append("• Informe a data da consulta.")
+        if not hora:
+            erros.append("• Informe o horário.")
+        elif not re.match(r"^\d{2}:\d{2}$", hora):
+            erros.append("• Horário inválido. Use o formato HH:MM.")
+
+        if erros:
+            messagebox.showerror("Campos inválidos", "\n".join(erros))
+            return
+
         try:
-            pac = int(self.cb_paciente.get().split(" - ")[0])
-            fis = int(self.cb_fisio.get().split(" - ")[0])
+            pac_id = int(pac_str.split("—")[0].strip())
+            fis_id = int(fis_str.split("—")[0].strip())
+        except (ValueError, IndexError):
+            messagebox.showerror("Erro", "Seleção inválida de paciente ou fisioterapeuta.")
+            return
 
+        try:
             conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-
+            cur  = conn.cursor()
             cur.execute("""
                 INSERT INTO consultas
-                (id_paciente, id_fisioterapeuta, data_consulta, horario, status)
-                VALUES (?, ?, ?, ?, 'Pendente')
-            """, (
-                pac,
-                fis,
-                self.ent_data.get(),
-                self.ent_hora.get(),
-            ))
-
+                (id_paciente, id_fisioterapeuta, data_consulta, horario,
+                 convenio, plano_saude, status, observacao)
+                VALUES (?,?,?,?,?,?,'Pendente',?)
+            """, (pac_id, fis_id, data, hora, convenio, plano, obs))
             conn.commit()
+            self._render_tabela(cur)
             conn.close()
-
-            self.carregar_dados()
-
+            messagebox.showinfo("Sucesso", "Consulta agendada com sucesso!")
+            self._limpar_form()
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
-    # =========================
-    # CALENDÁRIO
-    # =========================
+    def _mudar_status(self, consulta_id: int, novo_status: str):
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur  = conn.cursor()
+            cur.execute("UPDATE consultas SET status = ? WHERE id = ?",
+                        (novo_status, consulta_id))
+            conn.commit()
+            self._render_tabela(cur)
+            conn.close()
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
+
+    def _excluir(self, consulta_id: int, nome_pac: str):
+        if not messagebox.askyesno(
+            "Confirmar exclusão",
+            f"Excluir consulta de '{nome_pac}'?\nEssa ação não pode ser desfeita."
+        ):
+            return
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur  = conn.cursor()
+            cur.execute("DELETE FROM consultas WHERE id = ?", (consulta_id,))
+            conn.commit()
+            self._render_tabela(cur)
+            conn.close()
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
+
+    def _limpar_form(self):
+        self.ent_data.delete(0, "end")
+        self.ent_hora.delete(0, "end")
+        self.ent_plano.delete(0, "end")
+        self.ent_obs.delete(0, "end")
+        self.cb_paciente.set("")
+        self.cb_fisio.set("")
+
+    # ── calendário ────────────────────────────────────────────────────────────
+
     def pop_calendario(self, entry):
         self._calendar_target = entry
-
         self.pop = ctk.CTkToplevel(self)
         self.pop.geometry("380x280")
         self.pop.grab_set()
-
         self.cal = Calendar(self.pop, date_pattern="dd/mm/yyyy")
         self.cal.pack()
+        ctk.CTkButton(self.pop, text="Confirmar", command=self._get_data).pack(pady=4)
 
-        ctk.CTkButton(
-            self.pop,
-            text="Confirmar",
-            command=self.get_data,
-        ).pack()
-
-    def get_data(self):
+    def _get_data(self):
         self._calendar_target.delete(0, "end")
         self._calendar_target.insert("end", self.cal.get_date())
         self.pop.destroy()

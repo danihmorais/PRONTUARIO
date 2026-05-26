@@ -1,157 +1,472 @@
-import customtkinter as ctk
 import sqlite3
+import customtkinter as ctk
 from tkinter import messagebox
 from datetime import datetime
 from theme_manager import ThemeManager
 from config import DB_PATH
+
 
 class RecordWindow(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="transparent")
         self.controller = controller
         self._tm = ThemeManager.get()
-        self.paciente_id_selecionado = None
+        self._paciente_id = None
+        self._paciente_nome = None
         self._build_ui()
 
-    def _build_ui(self):
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.pack(fill="x", pady=(0, 20))
-        title = ctk.CTkLabel(header, text="Prontuário Fisioterapêutico", font=(self._tm.font, 24, "bold"), text_color=self._tm.c("BLACK"))
-        title.pack(anchor="w")
-        subtitle = ctk.CTkLabel(header, text="Evolução, relatos e prescrições do paciente", font=(self._tm.font, 13), text_color=self._tm.c("GRAY"))
-        subtitle.pack(anchor="w", pady=(4, 0))
-        
-        search_frame = ctk.CTkFrame(self, fg_color=self._tm.c("WHITE"), corner_radius=10, border_color=self._tm.c("GRAY_LIGHT"), border_width=1)
-        search_frame.pack(fill="x", pady=(0, 10))
-        lbl_busca = ctk.CTkLabel(search_frame, text="Buscar Paciente (CPF):", font=(self._tm.font, 12, "bold"), text_color=self._tm.c("BLACK"))
-        lbl_busca.pack(side="left", padx=10, pady=10)
-        self.ent_busca_cpf = ctk.CTkEntry(search_frame, width=200, fg_color=self._tm.c("GRAY_BG"), text_color=self._tm.c("BLACK"))
-        self.ent_busca_cpf.pack(side="left", padx=10, pady=10)
-        btn_buscar = ctk.CTkButton(search_frame, text="Buscar e Carregar", fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"), text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 12, "bold"), command=self.buscar_paciente)
-        btn_buscar.pack(side="left", padx=10, pady=10)
-        
-        self.lbl_paciente_nome = ctk.CTkLabel(search_frame, text="Nenhum paciente selecionado", font=(self._tm.font, 14, "bold"), text_color=self._tm.c("GRAY_DARK"))
-        self.lbl_paciente_nome.pack(side="right", padx=20, pady=10)
+    # ── layout ────────────────────────────────────────────────────────────────
 
-        self.tbv_prontuario = ctk.CTkTabview(self, fg_color=self._tm.c("WHITE"), bg_color="transparent", border_color=self._tm.c("GRAY_LIGHT"), border_width=1, corner_radius=10, text_color=self._tm.c("BLACK"))
-        self.tbv_prontuario.pack(fill="both", expand=True)
-        
-        self.tab_novo = self.tbv_prontuario.add("Novo Registro")
-        self.tab_hist = self.tbv_prontuario.add("Histórico do Paciente")
-        self.tab_novo.grid_columnconfigure(0, weight=1)
-        self.tab_hist.grid_columnconfigure(0, weight=1)
+    def _build_ui(self):
+        # Cabeçalho
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 16))
+
+        ctk.CTkLabel(
+            header, text="Prontuário Fisioterapêutico",
+            font=(self._tm.font, 24, "bold"),
+            text_color=self._tm.c("BLACK"),
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            header, text="Evolução clínica, avaliações e prescrições",
+            font=(self._tm.font, 13),
+            text_color=self._tm.c("GRAY"),
+        ).pack(anchor="w", pady=(4, 0))
+
+        # Busca
+        self._build_busca()
+
+        # Painel info paciente (oculto até busca)
+        self.info_frame = ctk.CTkFrame(
+            self,
+            fg_color=self._tm.c("BLUE_XL"),
+            corner_radius=8,
+        )
+        # não empacota até ter resultado
+
+        # TabView
+        self.tbv = ctk.CTkTabview(
+            self,
+            fg_color=self._tm.c("WHITE"),
+            bg_color="transparent",
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
+            corner_radius=10,
+            text_color=self._tm.c("BLACK"),
+            segmented_button_selected_color=self._tm.c("BLUE"),
+            segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
+            segmented_button_unselected_color=self._tm.c("GRAY_BG"),
+            segmented_button_unselected_hover_color=self._tm.c("GRAY_LIGHT"),
+        )
+        self.tbv.pack(fill="both", expand=True)
+
+        self._tab_novo = self.tbv.add("Novo Registro")
+        self._tab_hist = self.tbv.add("Histórico do Paciente")
 
         self._build_novo_registro()
         self._build_historico()
 
+    def _build_busca(self):
+        fr = ctk.CTkFrame(
+            self,
+            fg_color=self._tm.c("WHITE"),
+            corner_radius=10,
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
+        )
+        fr.pack(fill="x", pady=(0, 12))
+
+        ctk.CTkLabel(
+            fr, text="Buscar Paciente:",
+            font=(self._tm.font, 13, "bold"),
+            text_color=self._tm.c("BLACK"),
+        ).pack(side="left", padx=(16, 8), pady=12)
+
+        self.ent_busca = ctk.CTkEntry(
+            fr,
+            width=260, height=36,
+            placeholder_text="Nome ou CPF...",
+            fg_color=self._tm.c("GRAY_BG"),
+            text_color=self._tm.c("BLACK"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            font=(self._tm.font, 13),
+        )
+        self.ent_busca.pack(side="left", padx=8, pady=12)
+        self.ent_busca.bind("<Return>", lambda _: self._buscar())
+
+        ctk.CTkButton(
+            fr, text="🔍  Buscar",
+            height=36, width=120,
+            fg_color=self._tm.c("BLUE"),
+            hover_color=self._tm.c("DARK_BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            font=(self._tm.font, 13, "bold"),
+            command=self._buscar,
+        ).pack(side="left", padx=8)
+
+        self.lbl_pac_info = ctk.CTkLabel(
+            fr, text="Nenhum paciente selecionado",
+            font=(self._tm.font, 13, "bold"),
+            text_color=self._tm.c("GRAY"),
+        )
+        self.lbl_pac_info.pack(side="right", padx=20)
+
     def _build_novo_registro(self):
-        self.container_novo = ctk.CTkScrollableFrame(self.tab_novo, fg_color="transparent")
-        self.container_novo.pack(fill="both", expand=True)
-        self.txt_queixa = self._add_textbox(self.container_novo, "Motivo da Consulta / Queixa Principal")
-        self.txt_exame = self._add_textbox(self.container_novo, "Avaliação Fisioterapêutica / Exame Físico")
-        self.txt_diagnostico = self._add_textbox(self.container_novo, "Diagnóstico Cinesiológico Funcional / Conduta")
-        self.txt_prescricao = self._add_textbox(self.container_novo, "Prescrição de Exercícios / Orientações")
-        footer = ctk.CTkFrame(self.container_novo, fg_color="transparent")
-        footer.pack(fill="x", padx=20, pady=20)
-        ctk.CTkButton(footer, text="Salvar Prontuário", fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"), text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 12, "bold"), height=40, command=self.salvar_prontuario).pack(side="right")
-        ctk.CTkButton(footer, text="Limpar", fg_color=self._tm.c("BLUE_XL"), hover_color=self._tm.c("GRAY_LIGHT"), text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"), height=40, command=self._limpar).pack(side="right", padx=10)
+        cont = ctk.CTkScrollableFrame(self._tab_novo, fg_color="transparent")
+        cont.pack(fill="both", expand=True)
+
+        self._fields = {}
+        specs = [
+            ("queixa",      "📋  Motivo da Consulta / Queixa Principal"),
+            ("exame",       "🔍  Avaliação Fisioterapêutica / Exame Físico"),
+            ("diagnostico", "📊  Diagnóstico Cinesiológico Funcional / Conduta"),
+            ("prescricao",  "💊  Prescrição de Exercícios / Orientações"),
+        ]
+        for key, label in specs:
+            self._fields[key] = self._add_textbox(cont, label)
+
+        footer = ctk.CTkFrame(cont, fg_color="transparent")
+        footer.pack(fill="x", padx=20, pady=(10, 20))
+
+        ctk.CTkButton(
+            footer, text="💾  Salvar Prontuário",
+            height=42,
+            fg_color=self._tm.c("BLUE"),
+            hover_color=self._tm.c("DARK_BLUE"),
+            text_color=self._tm.c("TOPBAR_TEXT"),
+            font=(self._tm.font, 13, "bold"),
+            command=self._salvar,
+        ).pack(side="right")
+
+        ctk.CTkButton(
+            footer, text="Limpar",
+            height=42,
+            fg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("GRAY_LIGHT"),
+            text_color=self._tm.c("BLUE"),
+            font=(self._tm.font, 13, "bold"),
+            command=self._limpar,
+        ).pack(side="right", padx=10)
 
     def _build_historico(self):
-        self.container_hist = ctk.CTkScrollableFrame(self.tab_hist, fg_color="transparent")
-        self.container_hist.pack(fill="both", expand=True)
-        self.lbl_historico_vazio = ctk.CTkLabel(self.container_hist, text="Busque um paciente pelo CPF para ver o histórico.", font=(self._tm.font, 14), text_color=self._tm.c("GRAY"))
-        self.lbl_historico_vazio.pack(pady=40)
+        # barra de busca dentro do histórico
+        barra = ctk.CTkFrame(self._tab_hist, fg_color="transparent")
+        barra.pack(fill="x", padx=10, pady=(10, 6))
+
+        self.ent_busca_hist = ctk.CTkEntry(
+            barra, placeholder_text="Filtrar por texto...",
+            height=32, width=240,
+            fg_color=self._tm.c("GRAY_BG"),
+            text_color=self._tm.c("BLACK"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+        )
+        self.ent_busca_hist.pack(side="left")
+        self.ent_busca_hist.bind("<KeyRelease>", lambda _: self._filtrar_hist())
+
+        ctk.CTkButton(
+            barra, text="🔄", width=36, height=32,
+            fg_color=self._tm.c("BLUE_XL"),
+            hover_color=self._tm.c("GRAY_LIGHT"),
+            text_color=self._tm.c("BLUE"),
+            command=self._recarregar_hist,
+        ).pack(side="left", padx=8)
+
+        self.lbl_hist_count = ctk.CTkLabel(
+            barra, text="",
+            font=(self._tm.font, 12),
+            text_color=self._tm.c("GRAY"),
+        )
+        self.lbl_hist_count.pack(side="right")
+
+        self.cont_hist = ctk.CTkScrollableFrame(
+            self._tab_hist, fg_color="transparent"
+        )
+        self.cont_hist.pack(fill="both", expand=True)
+
+        self._mostrar_vazio_hist()
+
+    # ── helpers ───────────────────────────────────────────────────────────────
 
     def _add_textbox(self, parent, label_text):
         fr = ctk.CTkFrame(parent, fg_color="transparent")
-        fr.pack(fill="x", padx=20, pady=10)
-        lbl = ctk.CTkLabel(fr, text=label_text, font=(self._tm.font, 13, "bold"), text_color=self._tm.c("BLACK"))
-        lbl.pack(anchor="w", pady=(0, 5))
-        txt = ctk.CTkTextbox(fr, height=100, fg_color=self._tm.c("GRAY_BG"), border_color=self._tm.c("GRAY_LIGHT"), border_width=1, text_color=self._tm.c("BLACK"), font=(self._tm.font, 13))
+        fr.pack(fill="x", padx=20, pady=8)
+
+        ctk.CTkLabel(
+            fr, text=label_text,
+            font=(self._tm.font, 13, "bold"),
+            text_color=self._tm.c("BLACK"),
+        ).pack(anchor="w", pady=(0, 4))
+
+        txt = ctk.CTkTextbox(
+            fr, height=90,
+            fg_color=self._tm.c("GRAY_BG"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
+            text_color=self._tm.c("BLACK"),
+            font=(self._tm.font, 13),
+        )
         txt.pack(fill="x")
         return txt
 
-    def buscar_paciente(self):
-        cpf = self.ent_busca_cpf.get().strip()
-        if not cpf:
-            messagebox.showwarning("Atenção", "Digite o CPF do paciente para buscar.")
+    def _mostrar_vazio_hist(self):
+        for w in self.cont_hist.winfo_children():
+            w.destroy()
+        ctk.CTkLabel(
+            self.cont_hist,
+            text="Busque um paciente para ver o histórico de prontuários.",
+            font=(self._tm.font, 14),
+            text_color=self._tm.c("GRAY"),
+        ).pack(pady=40)
+
+    # ── busca ─────────────────────────────────────────────────────────────────
+
+    def _buscar(self):
+        termo = self.ent_busca.get().strip()
+        if not termo:
+            messagebox.showwarning("Atenção", "Digite o nome ou CPF do paciente.")
+            return
+
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur  = conn.cursor()
+            # tenta por CPF exato (só dígitos) ou nome parcial
+            digitos = "".join(c for c in termo if c.isdigit())
+            if digitos:
+                cur.execute("SELECT id, nome, cpf FROM pacientes WHERE cpf = ?", (digitos,))
+            else:
+                cur.execute("SELECT id, nome, cpf FROM pacientes WHERE nome LIKE ?",
+                            (f"%{termo}%",))
+            resultados = cur.fetchall()
+            conn.close()
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
+            return
+
+        if not resultados:
+            self.lbl_pac_info.configure(
+                text="Paciente não encontrado", text_color=self._tm.c("RED")
+            )
+            self._paciente_id = None
+            self._mostrar_vazio_hist()
+            return
+
+        if len(resultados) == 1:
+            self._selecionar_paciente(*resultados[0])
+        else:
+            self._popup_selecao(resultados)
+
+    def _popup_selecao(self, resultados):
+        """Quando há múltiplos resultados, exibe popup para o usuário escolher."""
+        pop = ctk.CTkToplevel(self)
+        pop.title("Selecionar Paciente")
+        pop.geometry("420x320")
+        pop.grab_set()
+        pop.transient(self.winfo_toplevel())
+
+        ctk.CTkLabel(
+            pop, text="Múltiplos pacientes encontrados. Selecione:",
+            font=(self._tm.font, 13, "bold"),
+            text_color=self._tm.c("BLACK"),
+        ).pack(pady=(16, 8), padx=20, anchor="w")
+
+        scroll = ctk.CTkScrollableFrame(pop, fg_color=self._tm.c("GRAY_BG"))
+        scroll.pack(fill="both", expand=True, padx=16, pady=(0, 12))
+
+        for pid, nome, cpf in resultados:
+            ctk.CTkButton(
+                scroll,
+                text=f"{nome}  —  CPF: {cpf}",
+                anchor="w",
+                fg_color=self._tm.c("WHITE"),
+                hover_color=self._tm.c("BLUE_XL"),
+                text_color=self._tm.c("BLACK"),
+                font=(self._tm.font, 13),
+                height=38,
+                command=lambda i=pid, n=nome, c=cpf: [
+                    self._selecionar_paciente(i, n, c), pop.destroy()
+                ],
+            ).pack(fill="x", pady=2, padx=4)
+
+    def _selecionar_paciente(self, pid, nome, cpf):
+        self._paciente_id = pid
+        self._paciente_nome = nome
+        self.lbl_pac_info.configure(
+            text=f"📋  {nome}  —  CPF: {cpf}",
+            text_color=self._tm.c("BLUE"),
+        )
+        self._carregar_historico()
+
+    # ── histórico ─────────────────────────────────────────────────────────────
+
+    def _carregar_historico(self):
+        if not self._paciente_id:
             return
         try:
             conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, nome FROM pacientes WHERE cpf = ?", (cpf,))
-            paciente = cursor.fetchone()
-            if paciente:
-                self.paciente_id_selecionado = paciente[0]
-                self.lbl_paciente_nome.configure(text=f"Paciente: {paciente[1]}", text_color=self._tm.c("BLUE"))
-                self.carregar_historico(cursor, self.paciente_id_selecionado)
-            else:
-                self.paciente_id_selecionado = None
-                self.lbl_paciente_nome.configure(text="Paciente não encontrado", text_color=self._tm.c("RED"))
-                self.limpar_historico()
+            cur  = conn.cursor()
+            cur.execute("""
+                SELECT id, data_registro, queixa, exame, diagnostico, prescricao
+                FROM prontuarios
+                WHERE id_paciente = ?
+                ORDER BY id DESC
+            """, (self._paciente_id,))
+            self._registros = cur.fetchall()
             conn.close()
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao buscar paciente: {str(e)}")
+            messagebox.showerror("Erro", str(e))
+            return
+        self._render_historico(self._registros)
 
-    def carregar_historico(self, cursor, paciente_id):
-        self.limpar_historico()
-        cursor.execute("SELECT data_registro, queixa, exame, diagnostico, prescricao FROM prontuarios WHERE id_paciente = ? ORDER BY id DESC", (paciente_id,))
-        registros = cursor.fetchall()
+    def _recarregar_hist(self):
+        self.ent_busca_hist.delete(0, "end")
+        self._carregar_historico()
+
+    def _filtrar_hist(self):
+        termo = self.ent_busca_hist.get().strip().lower()
+        if not termo:
+            self._render_historico(self._registros)
+            return
+        filtrados = [
+            r for r in self._registros
+            if any(termo in str(v).lower() for v in r)
+        ]
+        self._render_historico(filtrados)
+
+    def _render_historico(self, registros):
+        for w in self.cont_hist.winfo_children():
+            w.destroy()
+
+        self.lbl_hist_count.configure(
+            text=f"{len(registros)} registro(s)"
+        )
+
         if not registros:
-            lbl = ctk.CTkLabel(self.container_hist, text="Nenhum registro encontrado para este paciente.", font=(self._tm.font, 14), text_color=self._tm.c("GRAY"))
-            lbl.pack(pady=40)
+            ctk.CTkLabel(
+                self.cont_hist,
+                text="Nenhum registro encontrado.",
+                font=(self._tm.font, 14),
+                text_color=self._tm.c("GRAY"),
+            ).pack(pady=30)
             return
+
         for reg in registros:
-            data_reg, queixa, exame, diag, presc = reg
-            card = ctk.CTkFrame(self.container_hist, fg_color=self._tm.c("GRAY_BG"), corner_radius=8, border_color=self._tm.c("GRAY_LIGHT"), border_width=1)
-            card.pack(fill="x", padx=20, pady=10)
-            lbl_data = ctk.CTkLabel(card, text=f"Data: {data_reg}", font=(self._tm.font, 12, "bold"), text_color=self._tm.c("BLUE"))
-            lbl_data.pack(anchor="w", padx=10, pady=(10, 5))
-            self._add_hist_label(card, "Motivo / Queixa:", queixa)
-            self._add_hist_label(card, "Avaliação Fisioterapêutica:", exame)
-            self._add_hist_label(card, "Diagnóstico / Conduta:", diag)
-            self._add_hist_label(card, "Prescrição / Orientações:", presc)
+            rid, data_reg, queixa, exame, diag, presc = reg
+            self._render_card(rid, data_reg, queixa, exame, diag, presc)
 
-    def _add_hist_label(self, parent, title, content):
-        if content and content.strip():
-            fr = ctk.CTkFrame(parent, fg_color="transparent")
-            fr.pack(fill="x", padx=10, pady=2)
-            lbl_title = ctk.CTkLabel(fr, text=title, font=(self._tm.font, 12, "bold"), text_color=self._tm.c("BLACK"))
-            lbl_title.pack(anchor="w")
-            lbl_content = ctk.CTkLabel(fr, text=content, font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"), justify="left", wraplength=800)
-            lbl_content.pack(anchor="w", padx=10)
+    def _render_card(self, rid, data_reg, queixa, exame, diag, presc):
+        card = ctk.CTkFrame(
+            self.cont_hist,
+            fg_color=self._tm.c("WHITE"),
+            corner_radius=10,
+            border_color=self._tm.c("GRAY_LIGHT"),
+            border_width=1,
+        )
+        card.pack(fill="x", padx=16, pady=8)
 
-    def limpar_historico(self):
-        for widget in self.container_hist.winfo_children():
-            widget.destroy()
+        # cabeçalho do card
+        ch = ctk.CTkFrame(card, fg_color=self._tm.c("BLUE_XL"), corner_radius=8)
+        ch.pack(fill="x", padx=1, pady=(1, 0))
 
-    def salvar_prontuario(self):
-        if not self.paciente_id_selecionado:
-            messagebox.showwarning("Atenção", "Busque e selecione um paciente primeiro.")
+        ctk.CTkLabel(
+            ch, text=f"📅  {data_reg}",
+            font=(self._tm.font, 13, "bold"),
+            text_color=self._tm.c("DARK_BLUE"),
+        ).pack(side="left", padx=14, pady=8)
+
+        # botão excluir
+        ctk.CTkButton(
+            ch, text="🗑  Excluir", width=90, height=28,
+            fg_color=self._tm.c("RED_LIGHT"),
+            hover_color="#fecaca",
+            text_color=self._tm.c("RED"),
+            font=(self._tm.font, 11, "bold"),
+            command=lambda i=rid: self._excluir_registro(i),
+        ).pack(side="right", padx=10, pady=6)
+
+        # conteúdo
+        content = ctk.CTkFrame(card, fg_color="transparent")
+        content.pack(fill="x", padx=14, pady=(8, 14))
+
+        campos = [
+            ("Motivo / Queixa Principal", queixa),
+            ("Avaliação Fisioterapêutica", exame),
+            ("Diagnóstico / Conduta",      diag),
+            ("Prescrição / Orientações",   presc),
+        ]
+        for titulo, valor in campos:
+            if valor and valor.strip():
+                ctk.CTkLabel(
+                    content, text=titulo,
+                    font=(self._tm.font, 12, "bold"),
+                    text_color=self._tm.c("BLACK"),
+                    anchor="w",
+                ).pack(anchor="w", pady=(6, 0))
+                ctk.CTkLabel(
+                    content, text=valor.strip(),
+                    font=(self._tm.font, 12),
+                    text_color=self._tm.c("GRAY_DARK"),
+                    justify="left",
+                    wraplength=860,
+                    anchor="w",
+                ).pack(anchor="w", padx=10)
+
+    # ── ações ─────────────────────────────────────────────────────────────────
+
+    def _salvar(self):
+        if not self._paciente_id:
+            messagebox.showwarning(
+                "Atenção",
+                "Busque e selecione um paciente antes de salvar."
+            )
             return
-        queixa = self.txt_queixa.get("1.0", "end").strip()
-        exame = self.txt_exame.get("1.0", "end").strip()
-        diag = self.txt_diagnostico.get("1.0", "end").strip()
-        presc = self.txt_prescricao.get("1.0", "end").strip()
-        if not queixa and not exame and not diag and not presc:
-            messagebox.showwarning("Atenção", "Preencha ao menos um dos campos para salvar o prontuário.")
+
+        queixa = self._fields["queixa"].get("1.0", "end").strip()
+        exame  = self._fields["exame"].get("1.0", "end").strip()
+        diag   = self._fields["diagnostico"].get("1.0", "end").strip()
+        presc  = self._fields["prescricao"].get("1.0", "end").strip()
+
+        if not any([queixa, exame, diag, presc]):
+            messagebox.showwarning(
+                "Atenção",
+                "Preencha ao menos um campo para salvar o prontuário."
+            )
             return
+
         data_atual = datetime.now().strftime("%d/%m/%Y %H:%M")
         try:
             conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO prontuarios (id_paciente, data_registro, queixa, exame, diagnostico, prescricao) VALUES (?, ?, ?, ?, ?, ?)", (self.paciente_id_selecionado, data_atual, queixa, exame, diag, presc))
+            cur  = conn.cursor()
+            cur.execute("""
+                INSERT INTO prontuarios
+                (id_paciente, data_registro, queixa, exame, diagnostico, prescricao)
+                VALUES (?,?,?,?,?,?)
+            """, (self._paciente_id, data_atual, queixa, exame, diag, presc))
             conn.commit()
-            self.carregar_historico(cursor, self.paciente_id_selecionado)
             conn.close()
-            messagebox.showinfo("Sucesso", "Registro do prontuário salvo com sucesso!")
+            messagebox.showinfo("Sucesso", "Prontuário salvo com sucesso!")
             self._limpar()
-            self.tbv_prontuario.set("Histórico do Paciente")
+            self._carregar_historico()
+            self.tbv.set("Histórico do Paciente")
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao salvar prontuário: {str(e)}")
+            messagebox.showerror("Erro", str(e))
+
+    def _excluir_registro(self, registro_id: int):
+        if not messagebox.askyesno(
+            "Confirmar exclusão",
+            "Excluir este registro de prontuário?\nEssa ação não pode ser desfeita."
+        ):
+            return
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur  = conn.cursor()
+            cur.execute("DELETE FROM prontuarios WHERE id = ?", (registro_id,))
+            conn.commit()
+            conn.close()
+            self._carregar_historico()
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
 
     def _limpar(self):
-        self.txt_queixa.delete("1.0", "end")
-        self.txt_exame.delete("1.0", "end")
-        self.txt_diagnostico.delete("1.0", "end")
-        self.txt_prescricao.delete("1.0", "end")
+        for txt in self._fields.values():
+            txt.delete("1.0", "end")

@@ -14,12 +14,13 @@ try:
         executar_modo_update,
     )
 
-    def checar_update_background(app_root):
+    def checar_update_background(controller):
         try:
             data = verificar_e_atualizar()
             if not data:
                 return
-            app_root.after(0, lambda: perguntar_atualizacao(data))
+            if controller.app and controller.app.winfo_exists():
+                controller.app.after(0, lambda: perguntar_atualizacao(data))
         except Exception:
             pass
 
@@ -36,7 +37,7 @@ try:
         threading.Thread(
             target=lambda: (
                 time.sleep(2),
-                checar_update_background(app.app)
+                checar_update_background(app)
             ),
             daemon=True
         ).start()
@@ -46,4 +47,5 @@ try:
 except Exception as e:
     print("ERRO CRÍTICO NA INICIALIZAÇÃO:")
     traceback.print_exc()
-    input("\nPressione ENTER para fechar a janela...")
+    if sys.stdin and sys.stdin.isatty():
+        input("\nPressione ENTER para fechar a janela...")

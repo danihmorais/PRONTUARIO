@@ -194,17 +194,14 @@ class SearchDoctorView(ctk.CTkFrame):
         self._render(tipo)
 
     def _render(self, tipo):
-        # limpa
-        for fr in self._row_frames:
-            fr.destroy()
-        self._row_frames.clear()
         self._selected_row = None
         self.lbl_sel.configure(text="")
+        for w in self._scroll.winfo_children():
+            w.destroy()
+        self._row_frames.clear()
 
-        # decide schema de colunas
         schema = self._COLS_FISIO if tipo == "Fisioterapeutas" else self._COLS_FUNC
 
-        # reconstrói cabeçalho
         for w in self._hdr_frame.winfo_children():
             w.destroy()
         x = 8

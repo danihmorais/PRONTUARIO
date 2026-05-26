@@ -18,11 +18,6 @@ from views.components.theme_switch import ThemeSwitch
 from config        import BASE_DIR, DB_PATH
 from theme_manager import ThemeManager
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _load_icon(path: str, size=(18, 18)) -> ctk.CTkImage | None:
     try:
         with Image.open(path) as img:
@@ -33,7 +28,6 @@ def _load_icon(path: str, size=(18, 18)) -> ctk.CTkImage | None:
             )
     except Exception:
         return None
-
 
 _STATUS_BG = {
     "Confirmada": "#D1FAE5",
@@ -48,14 +42,7 @@ _STATUS_TC = {
     "Realizada":  "#5B21B6",
 }
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MainWindow
-# ─────────────────────────────────────────────────────────────────────────────
-
 class MainWindow(ctk.CTk):
-
-    # ── init ──────────────────────────────────────────────────────────────────
 
     def __init__(self, controller):
         super().__init__()
@@ -65,7 +52,6 @@ class MainWindow(ctk.CTk):
         self.controller            = controller
         self._current_view: str    = ""
 
-        # janela
         try:
             self.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
         except Exception:
@@ -75,26 +61,20 @@ class MainWindow(ctk.CTk):
         self.minsize(1280, 720)
         self.after(10, self._maximize)
 
-        # layout grid
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
 
-        # construção
         self._build_sidebar()
         self._build_topbar()
         self._build_content_area()
 
-        # tema reativo
         self._tm.subscribe(self._on_theme_change)
 
-        # exibe dashboard inicial
         self.show_view("dashboard")
 
         self.protocol("WM_DELETE_WINDOW", self._close_window)
-
-    # ── layout ────────────────────────────────────────────────────────────────
 
     def _build_content_area(self):
         self._content = ctk.CTkFrame(self, fg_color="transparent")
@@ -102,7 +82,6 @@ class MainWindow(ctk.CTk):
         self._content.grid_columnconfigure(0, weight=1)
         self._content.grid_rowconfigure(0, weight=1)
 
-        # cria todas as views uma única vez
         self._views: dict[str, ctk.CTkFrame] = {
             "dashboard":      self._build_dashboard(),
             "form":           FormWindow(self._content, self.controller),
@@ -117,8 +96,6 @@ class MainWindow(ctk.CTk):
         for view in self._views.values():
             view.grid(row=0, column=0, sticky="nsew")
 
-    # ── sidebar ───────────────────────────────────────────────────────────────
-
     def _build_sidebar(self):
         self._sidebar = ctk.CTkFrame(
             self, width=224,
@@ -131,7 +108,6 @@ class MainWindow(ctk.CTk):
         self._sidebar.grid_propagate(False)
         self._tw(self._sidebar, fg_color="WHITE", border_color="GRAY_LIGHT")
 
-        # logo
         logo_fr = ctk.CTkFrame(self._sidebar, fg_color=self._tm.c("WHITE"), corner_radius=0)
         logo_fr.pack(fill="x", padx=18, pady=(20, 16))
         self._tw(logo_fr, fg_color="WHITE")
@@ -164,12 +140,10 @@ class MainWindow(ctk.CTk):
         self._lbl_title.pack(side="left", padx=(10, 0))
         self._tw(self._lbl_title, text_color="BLACK")
 
-        # divisor
         div = ctk.CTkFrame(self._sidebar, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div.pack(fill="x")
         self._tw(div, fg_color="GRAY_LIGHT")
 
-        # itens de navegação
         self._nav_section("PRINCIPAL")
         self._bt_dashboard     = self._nav_btn("  Dashboard",       "graph.png",           "dashboard")
         self._bt_consultas     = self._nav_btn("  Consultas",        "calendar-search.png", "appointment")
@@ -186,7 +160,6 @@ class MainWindow(ctk.CTk):
         self._bt_exportar = self._nav_btn("  Exportar dados",   "document.png",  "export")
         self._bt_config   = self._nav_btn("  Configurações",    "setting.png",   "config")
 
-        # todos os botões nav em lista para facilitar o toggle ativo
         self._nav_btns: dict[str, ctk.CTkButton] = {
             "dashboard":      self._bt_dashboard,
             "appointment":    self._bt_consultas,
@@ -198,7 +171,6 @@ class MainWindow(ctk.CTk):
             "config":         self._bt_config,
         }
 
-        # rodapé logout
         footer = ctk.CTkFrame(self._sidebar, fg_color=self._tm.c("WHITE"), corner_radius=0)
         footer.pack(side="bottom", fill="x", padx=12, pady=12)
         self._tw(footer, fg_color="WHITE")
@@ -250,8 +222,6 @@ class MainWindow(ctk.CTk):
         btn.pack(fill="x", padx=12, pady=2)
         return btn
 
-    # ── topbar ────────────────────────────────────────────────────────────────
-
     def _build_topbar(self):
         self._topbar = ctk.CTkFrame(
             self, height=56,
@@ -284,8 +254,6 @@ class MainWindow(ctk.CTk):
         self._theme_switch = ThemeSwitch(self._topbar)
         self._theme_switch.grid(row=0, column=1, sticky="e", padx=16, pady=8)
 
-    # ── navegação ─────────────────────────────────────────────────────────────
-
     _BREADCRUMBS = {
         "dashboard":      " Dashboard",
         "form":           " Cadastros",
@@ -298,16 +266,13 @@ class MainWindow(ctk.CTk):
     }
 
     def show_view(self, view_key: str):
-        # desativa todos os botões
         for key, btn in self._nav_btns.items():
             self._set_btn_active(btn, active=(key == view_key))
 
-        # breadcrumb
         self._lbl_breadcrumb.configure(
             text=self._BREADCRUMBS.get(view_key, "")
         )
 
-        # dashboard é recriado a cada visita (dados frescos)
         if view_key == "dashboard":
             self._views["dashboard"].destroy()
             self._views["dashboard"] = self._build_dashboard()
@@ -330,10 +295,7 @@ class MainWindow(ctk.CTk):
                 hover_color=self._tm.c("BLUE_XL"),
             )
 
-    # ── dashboard ─────────────────────────────────────────────────────────────
-
     def _build_dashboard(self) -> ctk.CTkFrame:
-        # lê dados do banco
         totais = {"consultas": 0, "pacientes": 0, "fisios": 0, "funcionarios": 0}
         consultas_proximas: list = []
         pacientes_recentes: list = []
@@ -382,10 +344,8 @@ class MainWindow(ctk.CTk):
         except Exception:
             consultas_hoje_n = 0
 
-        # ── frame raiz do dashboard ──
         dash = ctk.CTkFrame(self._content, fg_color="transparent")
 
-        # cabeçalho
         hdr = ctk.CTkFrame(dash, fg_color="transparent")
         hdr.pack(fill="x")
 
@@ -406,7 +366,6 @@ class MainWindow(ctk.CTk):
         lbl_data.pack(anchor="w", pady=(4, 0))
         self._tw(lbl_data, text_color="GRAY")
 
-        # ── cards de resumo ──
         cards_fr = ctk.CTkFrame(dash, fg_color="transparent")
         cards_fr.pack(fill="x", pady=(20, 16))
         for i in range(4):
@@ -456,14 +415,12 @@ class MainWindow(ctk.CTk):
             lbl_v.pack(anchor="w", padx=16, pady=(0, 14))
             self._tw(lbl_v, text_color="BLACK")
 
-        # ── painel inferior: próximas consultas + pacientes recentes ──
         bottom = ctk.CTkFrame(dash, fg_color="transparent")
         bottom.pack(fill="both", expand=True)
         bottom.grid_columnconfigure(0, weight=3)
         bottom.grid_columnconfigure(1, weight=1)
         bottom.grid_rowconfigure(0, weight=1)
 
-        # painel consultas
         panel_c = ctk.CTkFrame(
             bottom,
             fg_color=self._tm.c("WHITE"),
@@ -476,7 +433,6 @@ class MainWindow(ctk.CTk):
         panel_c.grid_columnconfigure(0, weight=1)
         self._tw(panel_c, fg_color="WHITE", border_color="GRAY_LIGHT")
 
-        # cabeçalho da tabela
         ph = ctk.CTkFrame(panel_c, fg_color="transparent")
         ph.grid(row=0, column=0, sticky="ew", padx=20, pady=(16, 8))
         ph.grid_columnconfigure(0, weight=1)
@@ -499,7 +455,6 @@ class MainWindow(ctk.CTk):
             command=lambda: self.show_view("appointment"),
         ).grid(row=0, column=1, sticky="e")
 
-        # header de colunas
         col_hdr = ctk.CTkFrame(
             panel_c, fg_color=self._tm.c("BLUE_XL"), corner_radius=6
         )
@@ -514,7 +469,6 @@ class MainWindow(ctk.CTk):
                 text_color=self._tm.c("DARK_BLUE"),
             ).pack(side="left", padx=6, pady=5)
 
-        # scroll de linhas
         scroll_c = ctk.CTkScrollableFrame(
             panel_c, fg_color="transparent", corner_radius=0
         )
@@ -555,7 +509,6 @@ class MainWindow(ctk.CTk):
                     font=(self._tm.font, 11, "bold"),
                 ).pack(side="left", padx=4, pady=3)
 
-        # painel pacientes recentes
         panel_p = ctk.CTkFrame(
             bottom,
             fg_color=self._tm.c("WHITE"),
@@ -628,23 +581,18 @@ class MainWindow(ctk.CTk):
 
         return dash
 
-    # ── themed-widget helpers ────────────────────────────────────────────────
-
     def _tw(self, widget, **color_keys):
-        """Registra widget para atualização reativa de tema."""
         self._themed_widgets.append({"widget": widget, "keys": color_keys})
 
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["GRAY_BG"])
 
-        # atualiza logo e título (referências diretas)
         try:
             self._lbl_title.configure(text_color=colors["BLACK"])
             self._logo_box.configure(fg_color=colors["BLUE"])
         except Exception:
             pass
 
-        # atualiza botões nav com estado correto
         for key, btn in self._nav_btns.items():
             try:
                 if key == self._current_view:
@@ -662,7 +610,6 @@ class MainWindow(ctk.CTk):
             except Exception:
                 pass
 
-        # widgets genéricos registrados via _tw()
         alive = []
         for entry in self._themed_widgets:
             w    = entry["widget"]
@@ -674,8 +621,6 @@ class MainWindow(ctk.CTk):
             except Exception:
                 pass
         self._themed_widgets = alive
-
-    # ── janela ────────────────────────────────────────────────────────────────
 
     def _maximize(self):
         try:

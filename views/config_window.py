@@ -3,6 +3,7 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 from theme_manager import ThemeManager
 from config import DB_PATH
+from build_info import BUILD_DATE
 
 class ConfigView(ctk.CTkFrame):
     def __init__(self, parent):
@@ -78,7 +79,7 @@ class ConfigView(ctk.CTkFrame):
         )
         lbl_info.pack(anchor="w", padx=20, pady=(20, 5))
 
-        info_text = f"Versão do Sistema: 1.0.0\nCaminho do Banco: {DB_PATH}"
+        info_text = f"Versão do Sistema: {BUILD_DATE}\nCaminho do Banco: {DB_PATH}"
         lbl_info_det = ctk.CTkLabel(
             container, 
             text=info_text, 

@@ -4,6 +4,7 @@ from config import DB_PATH
 
 def inicializar_banco():
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
     cursor = conn.cursor()
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS usuarios (

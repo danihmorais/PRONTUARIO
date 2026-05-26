@@ -6,9 +6,6 @@ from tkcalendar import Calendar
 from theme_manager import ThemeManager
 from config import DB_PATH
 
-
-# ─── helpers ──────────────────────────────────────────────────────────────────
-
 def _only_digits(s: str) -> str:
     return re.sub(r"\D", "", s)
 
@@ -46,16 +43,12 @@ def _validate_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
 
 def _bind_mask(entry: ctk.CTkEntry, fmt_fn):
-    """Bind a formatting function to an entry on KeyRelease."""
     def _on_key(_event):
         raw = _only_digits(entry.get())
         formatted = fmt_fn(raw)
         entry.delete(0, "end")
         entry.insert(0, formatted)
     entry.bind("<KeyRelease>", _on_key)
-
-
-# ─── main window ──────────────────────────────────────────────────────────────
 
 class FormWindow(ctk.CTkFrame):
     def __init__(self, parent, controller=None, usuario=None):
@@ -64,8 +57,6 @@ class FormWindow(ctk.CTkFrame):
         self._tm = ThemeManager.get()
         self._calendar_target = None
         self._build_ui()
-
-    # ── layout ────────────────────────────────────────────────────────────────
 
     def _build_ui(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -105,8 +96,6 @@ class FormWindow(ctk.CTkFrame):
         self._build_paciente()
         self._build_fisioterapeuta()
         self._build_funcionario()
-
-    # ── section / field helpers ───────────────────────────────────────────────
 
     def _section(self, parent, title):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -202,17 +191,11 @@ class FormWindow(ctk.CTkFrame):
             command=clear_cmd
         ).pack(side="right", padx=10)
 
-    # ── UFs helper ────────────────────────────────────────────────────────────
-
     @staticmethod
     def _ufs():
         return ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
                 "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC",
                 "SP","SE","TO"]
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # PACIENTE
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _build_paciente(self):
         cont = ctk.CTkScrollableFrame(self._tab_pac, fg_color="transparent")
@@ -254,7 +237,6 @@ class FormWindow(ctk.CTkFrame):
         cidade = self.p_cidade.get().strip()
         estado = self.p_estado.get()
 
-        # Validações
         erros = []
         if not nome:
             erros.append("• Nome completo é obrigatório.")
@@ -273,7 +255,6 @@ class FormWindow(ctk.CTkFrame):
             conn = sqlite3.connect(DB_PATH)
             cur  = conn.cursor()
 
-            # Verifica CPF duplicado
             cur.execute("SELECT id FROM pacientes WHERE cpf = ?", (_only_digits(cpf),))
             if cur.fetchone():
                 messagebox.showerror("CPF duplicado",
@@ -300,10 +281,6 @@ class FormWindow(ctk.CTkFrame):
                   self.p_bairro, self.p_cidade, self.p_cep, self.p_email, self.p_celular]:
             w.delete(0, "end")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # FISIOTERAPEUTA
-    # ══════════════════════════════════════════════════════════════════════════
-
     def _build_fisioterapeuta(self):
         cont = ctk.CTkScrollableFrame(self._tab_fisio, fg_color="transparent")
         cont.pack(fill="both", expand=True)
@@ -313,9 +290,9 @@ class FormWindow(ctk.CTkFrame):
         self.f_nome     = self._field(geral, "Nome completo",   0, 0, 2, required=True)
         self.f_crefito  = self._field(geral, "CREFITO",         0, 2, required=True)
         self.f_cpf      = self._field(geral, "CPF",             0, 3, required=True, mask_fn=_fmt_cpf)
-        self.f_esp      = self._combo(geral, "Especialidade",   1, 0, 2,
+        self.f_esp      = self._combo(geral, "Especialidade",   1, 0,
             ["Ortopedia","Neurologia","Respiratória","Cardiovascular",
-             "Desportiva","Dermato-Funcional","Gerontologia","Pediatria","Outra"])
+             "Desportiva","Dermato-Funcional","Gerontologia","Pediatria","Outra"], 2)
         self.f_email    = self._field(geral, "E-mail",          1, 2)
         self.f_celular  = self._field(geral, "Celular",         1, 3, mask_fn=_fmt_cel)
 
@@ -370,10 +347,6 @@ class FormWindow(ctk.CTkFrame):
         for w in [self.f_nome, self.f_crefito, self.f_cpf,
                   self.f_email, self.f_celular]:
             w.delete(0, "end")
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # FUNCIONÁRIO
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _build_funcionario(self):
         cont = ctk.CTkScrollableFrame(self._tab_func, fg_color="transparent")
@@ -456,8 +429,6 @@ class FormWindow(ctk.CTkFrame):
                   self.func_email, self.func_cel, self.func_cep,
                   self.func_end, self.func_bairro, self.func_cidade]:
             w.delete(0, "end")
-
-    # ── calendário ────────────────────────────────────────────────────────────
 
     def pop_calendario(self, entry_destino):
         self._calendar_target = entry_destino

@@ -5,6 +5,7 @@ from PIL import Image
 from tkcalendar import Calendar
 from theme_manager import ThemeManager
 from config import BASE_DIR
+from views.components.theme_switch import ThemeSwitch
 
 class FormWindow(CTkToplevel):
 
@@ -388,9 +389,6 @@ class FormWindow(CTkToplevel):
             self.tab_cadastro_medicos,
             limpar_cmd=self.limpar_cadastro_medico,
         )
-
-    def _theme_icon(self) -> str:
-        return "☀️" if self._tm.is_dark else "🌙"
 
     def _toggle_theme(self):
         self._tm.toggle()

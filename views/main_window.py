@@ -7,7 +7,7 @@ from PIL import Image
 
 from config import BASE_DIR
 from theme_manager import ThemeManager
-
+from views.components.theme_switch import ThemeSwitch
 
 class MainWindow(ctk.CTk):
 
@@ -342,25 +342,14 @@ class MainWindow(ctk.CTk):
 
         self._tw_add(lbl_dashboard, text_color="TOPBAR_TEXT")
 
-        self._theme_btn = ctk.CTkButton(
-            self.topbar,
-            text=self._theme_icon(),
-            width=38,
-            height=32,
-            font=(self._tm.font, 16),
-            fg_color=self._tm.c("TOPBAR_BG"),
-            hover_color=self._tm.c("BLUE"),
-            text_color=self._tm.c("TOPBAR_TEXT"),
-            corner_radius=8,
-            command=self._toggle_theme
-        )
+        self.theme_switch = ThemeSwitch(self.topbar)
 
-        self._theme_btn.grid(
+        self.theme_switch.grid(
             row=0,
             column=1,
             sticky="e",
             padx=16,
-            pady=12
+            pady=8
         )
 
     def _build_dashboard(self):
@@ -739,12 +728,6 @@ class MainWindow(ctk.CTk):
 
             name.pack(side="left", padx=12)
 
-    def _theme_icon(self):
-        return "☀️" if self._tm.is_dark else "🌙"
-
-    def _toggle_theme(self):
-        self._tm.toggle()
-
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["GRAY_BG"])
 
@@ -767,13 +750,6 @@ class MainWindow(ctk.CTk):
                 print(f"Erro ao aplicar tema em {widget}: {e}")
 
         self._themed_widgets = alive_widgets
-
-        self._theme_btn.configure(
-            text=self._theme_icon(),
-            fg_color=colors["TOPBAR_BG"],
-            hover_color=colors["BLUE"],
-            text_color=colors["TOPBAR_TEXT"]
-        )
 
     def _open_form(self):
         self.controller.open_form(self)

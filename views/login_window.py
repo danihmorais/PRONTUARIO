@@ -3,7 +3,7 @@ from tkinter import END
 from PIL import Image
 import sqlite3
 from theme_manager import ThemeManager
-
+from views.components.theme_switch import ThemeSwitch
 
 class LoginWindow(ctk.CTk):
 
@@ -111,15 +111,12 @@ class LoginWindow(ctk.CTk):
         )
         self.bt_entrar.place(x=630, y=400)
 
-        self._theme_btn = ctk.CTkButton(
-            self, text=self._theme_icon(),
-            width=32, height=28,
-            font=(self._tm.font, 14),
-            fg_color=self._tm.c("BLUE_XL"), hover_color=self._tm.c("GRAY_LIGHT"),
-            text_color=self._tm.c("GRAY_DARK"),
-            corner_radius=8, command=self._toggle_theme,
+        self.theme_switch.grid(
+            row=0,
+            column=1,
+            padx=16,
+            pady=8
         )
-        self._theme_btn.place(x=868, y=8)
 
         self.subtitulo_rodape = ctk.CTkLabel(
             self,

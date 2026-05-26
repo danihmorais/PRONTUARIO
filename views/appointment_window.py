@@ -3,6 +3,7 @@ from customtkinter import *
 from PIL import Image
 from theme_manager import ThemeManager
 from config import BASE_DIR
+from views.components.theme_switch import ThemeSwitch
 
 class AppointmentWindow(CTkToplevel):
 

@@ -46,6 +46,7 @@ class ThemeSwitch(ctk.CTkButton):
 
             fg_color=self._tm.c("WHITE"),
             hover_color=self._tm.c("BLUE_XL"),
+            bg_color=self._tm.c("WHITE"),
 
             border_width=1,
             border_color=self._tm.c("GRAY_LIGHT"),
@@ -69,8 +70,9 @@ class ThemeSwitch(ctk.CTkButton):
             image=self._icon(),
 
             fg_color=colors["WHITE"],
+            
             hover_color=colors["BLUE_XL"],
-
+            
             border_color=colors["GRAY_LIGHT"]
         )
 

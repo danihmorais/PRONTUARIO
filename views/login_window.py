@@ -69,7 +69,7 @@ class LoginWindow(ctk.CTk):
 
         self.lb_usuario = ctk.CTkLabel(
             self, text='Usuário',
-            text_color=self._tm.c("BLACK"), fg_color="transparent",
+            text_color=self._tm.c("BLACK"), fg_color=self._tm.c("BLUE_XL"),
             font=(self._tm.font, 14)
         )
         self.lb_usuario.place(x=610, y=250)
@@ -87,7 +87,7 @@ class LoginWindow(ctk.CTk):
 
         self.lb_senha = ctk.CTkLabel(
             self, text='Senha',
-            text_color=self._tm.c("BLACK"), font=(self._tm.font, 14)
+            text_color=self._tm.c("BLACK"), fg_color=self._tm.c("BLUE_XL"), font=(self._tm.font, 14)
         )
         self.lb_senha.place(x=610, y=320)
 
@@ -124,7 +124,7 @@ class LoginWindow(ctk.CTk):
         self.subtitulo_rodape = ctk.CTkLabel(
             self,
             text='Dúvidas ou problemas? Entre em contato\ncom nosso suporte técnico.',
-            text_color=self._tm.c("GRAY"), font=(self._tm.font, 10), justify='center'
+            text_color=self._tm.c("GRAY"), font=(self._tm.font, 10), justify='center', fg_color=self._tm.c("BLUE_XL")
         )
         self.subtitulo_rodape.place(x=648, y=456)
 
@@ -152,9 +152,20 @@ class LoginWindow(ctk.CTk):
 
         self.titulo.configure(text_color=colors["BLACK"])
         self.subtitulo.configure(text_color=colors["BLACK"])
-        self.lb_usuario.configure(text_color=colors["BLACK"])
-        self.lb_senha.configure(text_color=colors["BLACK"])
-        self.subtitulo_rodape.configure(text_color=colors["GRAY"])
+        self.lb_usuario.configure(
+            text_color=colors["BLACK"],
+            fg_color=colors["BLUE_XL"]
+        )
+
+        self.lb_senha.configure(
+            text_color=colors["BLACK"],
+            fg_color=colors["BLUE_XL"]
+        )
+
+        self.subtitulo_rodape.configure(
+            text_color=colors["GRAY"],
+            fg_color=colors["BLUE_XL"]
+        )
 
         self.entry_usuario.configure(
             fg_color=colors["WHITE"],

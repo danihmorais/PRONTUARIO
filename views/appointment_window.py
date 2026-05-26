@@ -13,10 +13,10 @@ class AppointmentWindow(CTkToplevel):
         super().__init__(parent)
         self.controller = controller
 
-        self.title("Consultas")
+        self.title("Prontuário - Consultas")
         self.geometry("1550x674+170+130")
         self.resizable(False, False)
-
+        self.iconbitmap('assets/icon.ico')
         self._tm.subscribe(self._on_theme_change)
         self.configure(fg_color=self._tm.c("GRAY_BG"))
 

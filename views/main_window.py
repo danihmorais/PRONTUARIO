@@ -4,7 +4,6 @@ import sqlite3
 from datetime import datetime
 import customtkinter as ctk
 from PIL import Image
-
 import views.search_pacient_window as spw
 import views.search_doctor_window as sdw
 from views.form_window import FormWindow
@@ -12,7 +11,7 @@ from views.appointment_window import AppointmentWindow
 from views.record_window import RecordWindow
 from views.export_window import ExportView
 from views.config_window import ConfigView
-from config import BASE_DIR
+from config import BASE_DIR, DB_PATH
 from theme_manager import ThemeManager
 from views.components.theme_switch import ThemeSwitch
 
@@ -22,24 +21,19 @@ class MainWindow(ctk.CTk):
         self._themed_widgets: List[dict] = []
         self._tm = ThemeManager.get()
         self.controller = controller
-        
         self.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
         self.title("Prontuário - Dashboard")
         self.configure(fg_color=self._tm.c("GRAY_BG"))
         self.minsize(1280, 720)
-        
         self.after(10, self._maximize)
         self._tm.subscribe(self._on_theme_change)
-        
         self._configure_layout()
         self._build_sidebar()
         self._build_topbar()
-        
         self.content_container = ctk.CTkFrame(self, fg_color="transparent")
         self.content_container.grid(row=1, column=1, sticky="nsew", padx=24, pady=24)
         self.content_container.grid_columnconfigure(0, weight=1)
         self.content_container.grid_rowconfigure(0, weight=1)
-        
         self.views = {}
         self.views["dashboard"] = self._create_dashboard_frame()
         self.views["form"] = FormWindow(self.content_container, self.controller)
@@ -49,20 +43,19 @@ class MainWindow(ctk.CTk):
         self.views["search_doctor"] = sdw.SearchDoctorView(self.content_container)
         self.views["export"] = ExportView(self.content_container)
         self.views["config"] = ConfigView(self.content_container)
-        
         for view in self.views.values():
             view.grid(row=0, column=0, sticky="nsew")
-            
         self.show_view("dashboard")
         self.protocol("WM_DELETE_WINDOW", self._close_window)
 
     def show_view(self, view_name):
-        for btn in [self.bt_dashboard, self.bt_consultas, self.bt_prontuario, self.bt_cadastro, self.bt_pacientes, self.bt_medicos, self.bt_exportar, self.bt_config]:
+        for btn in [self.bt_dashboard, self.bt_consultas, self.bt_prontuario, self.bt_cadastro, self.bt_pacientes, self.bt_fisioterapeutas, self.bt_exportar, self.bt_config]:
             self._set_btn_active(btn, False)
-            
         if view_name == "dashboard":
             self.lbl_breadcrumb.configure(text=" Dashboard")
             self._set_btn_active(self.bt_dashboard, True)
+            self.views["dashboard"] = self._create_dashboard_frame()
+            self.views["dashboard"].grid(row=0, column=0, sticky="nsew")
         elif view_name == "form":
             self.lbl_breadcrumb.configure(text=" Cadastro")
             self._set_btn_active(self.bt_cadastro, True)
@@ -76,15 +69,14 @@ class MainWindow(ctk.CTk):
             self.lbl_breadcrumb.configure(text=" Pacientes")
             self._set_btn_active(self.bt_pacientes, True)
         elif view_name == "search_doctor":
-            self.lbl_breadcrumb.configure(text=" Médicos")
-            self._set_btn_active(self.bt_medicos, True)
+            self.lbl_breadcrumb.configure(text=" Equipe")
+            self._set_btn_active(self.bt_fisioterapeutas, True)
         elif view_name == "export":
             self.lbl_breadcrumb.configure(text=" Exportar Dados")
             self._set_btn_active(self.bt_exportar, True)
         elif view_name == "config":
             self.lbl_breadcrumb.configure(text=" Configurações")
             self._set_btn_active(self.bt_config, True)
-            
         self.views[view_name].tkraise()
 
     def _set_btn_active(self, btn, active):
@@ -113,18 +105,14 @@ class MainWindow(ctk.CTk):
         self.sidebar.grid(row=0, column=0, rowspan=2, sticky="ns")
         self.sidebar.grid_propagate(False)
         self._tw_add(self.sidebar, fg_color="WHITE", border_color="GRAY_LIGHT")
-        
         logo_frame = ctk.CTkFrame(self.sidebar, fg_color=self._tm.c("WHITE"), corner_radius=0)
         logo_frame.pack(fill="x", padx=20, pady=(20, 20))
         self._tw_add(logo_frame, fg_color="WHITE")
-        
         self.logo_icon = ctk.CTkFrame(logo_frame, width=32, height=32, fg_color=self._tm.c("BLUE"), corner_radius=8)
         self.logo_icon.pack(side="left")
-        
         self.lbl_title = ctk.CTkLabel(logo_frame, text="PRONTUÁRIO", font=(self._tm.font, 14, "bold"), text_color=self._tm.c("BLACK"), fg_color="transparent")
         self.lbl_title.pack(side="left", padx=(10, 0))
         self._tw_add(self.logo_icon, fg_color="BLUE")
-        
         logo_path = os.path.join(BASE_DIR, "assets", "logo.png")
         try:
             with Image.open(logo_path) as img:
@@ -134,36 +122,26 @@ class MainWindow(ctk.CTk):
             lbl_logo.place(relx=0.5, rely=0.5, anchor="center")
         except:
             pass
-
         div1 = ctk.CTkFrame(self.sidebar, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div1.pack(fill="x")
         self._tw_add(div1, fg_color="GRAY_LIGHT")
-
         self._nav_section(self.sidebar, "PRINCIPAL")
         self.bt_dashboard = self._nav_button(self.sidebar, "  Dashboard", os.path.join(BASE_DIR, "assets", "icons", "graph.png"), active=True, command=lambda: self.show_view("dashboard"))
         self.bt_consultas = self._nav_button(self.sidebar, "  Consultas", os.path.join(BASE_DIR, "assets", "icons", "calendar-search.png"), command=lambda: self.show_view("appointment"))
         self.bt_prontuario = self._nav_button(self.sidebar, "  Prontuário", os.path.join(BASE_DIR, "assets", "icons", "clipboard.png"), command=lambda: self.show_view("record"))
         self.bt_cadastro = self._nav_button(self.sidebar, "  Cadastro", os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"), command=lambda: self.show_view("form"))
         self.bt_pacientes = self._nav_button(self.sidebar, "  Pacientes", os.path.join(BASE_DIR, "assets", "icons", "people.png"), command=lambda: self.show_view("search_pacient"))
-        self.bt_medicos = self._nav_button(self.sidebar, "  Médicos", os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"), command=lambda: self.show_view("search_doctor"))
-        
+        self.bt_fisioterapeutas = self._nav_button(self.sidebar, "  Equipe", os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"), command=lambda: self.show_view("search_doctor"))
         div2 = ctk.CTkFrame(self.sidebar, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div2.pack(fill="x", padx=16, pady=(8, 0))
         self._tw_add(div2, fg_color="GRAY_LIGHT")
-        
         self._nav_section(self.sidebar, "SISTEMA")
         self.bt_exportar = self._nav_button(self.sidebar, "  Exportar dados", os.path.join(BASE_DIR, "assets", "icons", "document.png"), command=lambda: self.show_view("export"))
         self.bt_config = self._nav_button(self.sidebar, "  Configurações", os.path.join(BASE_DIR, "assets", "icons", "setting.png"), command=lambda: self.show_view("config"))
-        
         footer = ctk.CTkFrame(self.sidebar, fg_color=self._tm.c("WHITE"), corner_radius=0)
         footer.pack(side="bottom", fill="x", padx=12, pady=12)
         self._tw_add(footer, fg_color="WHITE")
-        
-        self.bt_logout = ctk.CTkButton(
-            footer, text="  Sair", text_color=self._tm.c("RED"), font=(self._tm.font, 12), width=196, height=34, 
-            fg_color=self._tm.c("WHITE"), hover_color=self._tm.c("RED_LIGHT"), border_color=self._tm.c("GRAY_LIGHT"), 
-            border_width=1, corner_radius=8, anchor="w", command=self._logout
-        )
+        self.bt_logout = ctk.CTkButton(footer, text="  Sair", text_color=self._tm.c("RED"), font=(self._tm.font, 12), width=196, height=34, fg_color=self._tm.c("WHITE"), hover_color=self._tm.c("RED_LIGHT"), border_color=self._tm.c("GRAY_LIGHT"), border_width=1, corner_radius=8, anchor="w", command=self._logout)
         self.bt_logout.pack(fill="x")
         self._tw_add(self.bt_logout, text_color="RED", fg_color="WHITE", hover_color="RED_LIGHT", border_color="GRAY_LIGHT")
 
@@ -184,11 +162,7 @@ class MainWindow(ctk.CTk):
         fg = self._tm.c("BLUE") if active else self._tm.c("WHITE")
         tc = self._tm.c("TOPBAR_TEXT") if active else self._tm.c("GRAY_DARK")
         hc = self._tm.c("DARK_BLUE") if active else self._tm.c("BLUE_XL")
-        
-        btn = ctk.CTkButton(
-            parent_widget, image=icon, compound="left", text=text, text_color=tc, font=(self._tm.font, 13), 
-            width=196, height=38, fg_color=fg, hover_color=hc, corner_radius=8, anchor="w", command=command
-        )
+        btn = ctk.CTkButton(parent_widget, image=icon, compound="left", text=text, text_color=tc, font=(self._tm.font, 13), width=196, height=38, fg_color=fg, hover_color=hc, corner_radius=8, anchor="w", command=command)
         btn.image = icon
         btn.pack(fill="x", padx=12, pady=2)
         return btn
@@ -198,126 +172,99 @@ class MainWindow(ctk.CTk):
         self.topbar.grid(row=0, column=1, sticky="ew")
         self._tw_add(self.topbar, fg_color="TOPBAR_BG")
         self.topbar.grid_columnconfigure(0, weight=1)
-        
         breadcrumb = ctk.CTkFrame(self.topbar, fg_color="transparent")
         breadcrumb.grid(row=0, column=0, sticky="w", padx=24, pady=14)
-        
         lbl_inicio = ctk.CTkLabel(breadcrumb, text="Início /", text_color=self._tm.c("TOPBAR_MUTED"), font=(self._tm.font, 13))
         lbl_inicio.pack(side="left")
         self._tw_add(lbl_inicio, text_color="TOPBAR_MUTED")
-        
         self.lbl_breadcrumb = ctk.CTkLabel(breadcrumb, text=" Dashboard", text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 14, "bold"))
         self.lbl_breadcrumb.pack(side="left")
         self._tw_add(self.lbl_breadcrumb, text_color="TOPBAR_TEXT")
-        
         self.theme_switch = ThemeSwitch(self.topbar)
         self.theme_switch.grid(row=0, column=1, sticky="e", padx=16, pady=8)
 
     def _create_dashboard_frame(self):
-        total_consultas, total_pacientes, total_medicos, total_funcionarios = 0, 0, 0, 0
+        total_consultas, total_pacientes, total_fisios, total_funcionarios = 0, 0, 0, 0
         consultas, pacientes_recentes = [], []
-        
         try:
-            conn = sqlite3.connect("prontuario.db")
+            conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM consultas")
             total_consultas = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM pacientes")
             total_pacientes = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM medicos")
-            total_medicos = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM fisioterapeutas")
+            total_fisios = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM funcionarios")
             total_funcionarios = cursor.fetchone()[0]
-            cursor.execute("SELECT paciente, medico, horario, status FROM consultas ORDER BY horario ASC LIMIT 5")
+            cursor.execute("SELECT p.nome, f.nome, c.horario, c.status FROM consultas c JOIN pacientes p ON c.id_paciente = p.id JOIN fisioterapeutas f ON c.id_fisioterapeuta = f.id ORDER BY c.horario ASC LIMIT 5")
             consultas = cursor.fetchall()
             cursor.execute("SELECT nome FROM pacientes ORDER BY id DESC LIMIT 3")
             pacientes_recentes = cursor.fetchall()
             conn.close()
         except Exception:
             pass
-
         dash = ctk.CTkFrame(self.content_container, fg_color="transparent")
         dash.grid_columnconfigure(0, weight=1)
-
         header = ctk.CTkFrame(dash, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew")
-        
         title = ctk.CTkLabel(header, text="Visão geral", text_color=self._tm.c("BLACK"), font=(self._tm.font, 24, "bold"))
         title.pack(anchor="w")
         self._tw_add(title, text_color="BLACK")
-        
         subtitle = ctk.CTkLabel(header, text=datetime.now().strftime("%d/%m/%Y"), text_color=self._tm.c("GRAY"), font=(self._tm.font, 13))
         subtitle.pack(anchor="w", pady=(4, 0))
         self._tw_add(subtitle, text_color="GRAY")
-
         cards = ctk.CTkFrame(dash, fg_color="transparent")
         cards.grid(row=1, column=0, sticky="ew", pady=(24, 20))
         for i in range(4):
             cards.grid_columnconfigure(i, weight=1)
-            
-        card_data = [("Total de consultas", total_consultas), ("Total de pacientes", total_pacientes), ("Total de médicos", total_medicos), ("Funcionários", total_funcionarios)]
-        
+        card_data = [("Consultas", total_consultas), ("Pacientes", total_pacientes), ("Fisioterapeutas", total_fisios), ("Funcionários", total_funcionarios)]
         for i, (label, value) in enumerate(card_data):
             card = ctk.CTkFrame(cards, fg_color=self._tm.c("WHITE"), corner_radius=10, border_width=1, border_color=self._tm.c("GRAY_LIGHT"))
             card.grid(row=0, column=i, sticky="nsew", padx=(0 if i == 0 else 8, 8), ipadx=10, ipady=10)
             self._tw_add(card, fg_color="WHITE", border_color="GRAY_LIGHT")
-            
             lbl = ctk.CTkLabel(card, text=label, text_color=self._tm.c("GRAY"), font=(self._tm.font, 12))
             lbl.pack(anchor="w", padx=16, pady=(12, 6))
             self._tw_add(lbl, text_color="GRAY")
-            
             val = ctk.CTkLabel(card, text=str(value), text_color=self._tm.c("BLACK"), font=(self._tm.font, 28, "bold"))
             val.pack(anchor="w", padx=16, pady=(0, 12))
             self._tw_add(val, text_color="BLACK")
-
         bottom = ctk.CTkFrame(dash, fg_color="transparent")
         bottom.grid(row=2, column=0, sticky="nsew")
         bottom.grid_columnconfigure(0, weight=3)
         bottom.grid_columnconfigure(1, weight=1)
-
         panel_consultas = ctk.CTkFrame(bottom, fg_color=self._tm.c("WHITE"), corner_radius=10, border_width=1, border_color=self._tm.c("GRAY_LIGHT"))
         panel_consultas.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         self._tw_add(panel_consultas, fg_color="WHITE", border_color="GRAY_LIGHT")
-        
         title_cons = ctk.CTkLabel(panel_consultas, text="Próximas consultas", text_color=self._tm.c("BLACK"), font=(self._tm.font, 16, "bold"))
         title_cons.pack(anchor="w", padx=20, pady=16)
         self._tw_add(title_cons, text_color="BLACK")
-        
-        for paciente, medico, horario, status in consultas:
+        for paciente, fisioterapeuta, horario, status in consultas:
             row = ctk.CTkFrame(panel_consultas, fg_color="transparent", height=42)
             row.pack(fill="x", padx=20, pady=2)
             ctk.CTkLabel(row, text=paciente, width=180, anchor="w", font=(self._tm.font, 13)).pack(side="left")
-            ctk.CTkLabel(row, text=medico, width=120, anchor="w", text_color=self._tm.c("GRAY")).pack(side="left")
+            ctk.CTkLabel(row, text=fisioterapeuta, width=120, anchor="w", text_color=self._tm.c("GRAY")).pack(side="left")
             ctk.CTkLabel(row, text=horario, width=90, anchor="w", text_color=self._tm.c("GRAY")).pack(side="left")
-            
             status_color = {"Confirmada": "#D1FAE5", "Pendente": "#FEF3C7", "Cancelada": "#FEE2E2"}.get(status, "#E5E7EB")
             txt_color = {"Confirmada": "#065F46", "Pendente": "#92400E", "Cancelada": "#991B1B"}.get(status, "#374151")
-            
             status_lbl = ctk.CTkLabel(row, text=status, width=100, corner_radius=20, fg_color=status_color, text_color=txt_color, font=(self._tm.font, 11, "bold"))
             status_lbl.pack(side="right")
-
         side = ctk.CTkFrame(bottom, fg_color=self._tm.c("WHITE"), corner_radius=10, border_width=1, border_color=self._tm.c("GRAY_LIGHT"))
         side.grid(row=0, column=1, sticky="nsew")
         self._tw_add(side, fg_color="WHITE", border_color="GRAY_LIGHT")
-        
         side_title = ctk.CTkLabel(side, text="Pacientes recentes", text_color=self._tm.c("BLACK"), font=(self._tm.font, 15, "bold"))
         side_title.pack(anchor="w", padx=16, pady=16)
         self._tw_add(side_title, text_color="BLACK")
-        
         for paciente in pacientes_recentes:
             item = ctk.CTkFrame(side, fg_color="transparent")
             item.pack(fill="x", padx=16, pady=6)
-            
             avatar = ctk.CTkFrame(item, width=36, height=36, corner_radius=18, fg_color=self._tm.c("BLUE"))
             avatar.pack(side="left")
-            
             initials = paciente[0][:2].upper()
             lbl_avatar = ctk.CTkLabel(avatar, text=initials, text_color="white", font=(self._tm.font, 11, "bold"))
             lbl_avatar.place(relx=0.5, rely=0.5, anchor="center")
-            
             name = ctk.CTkLabel(item, text=paciente[0], font=(self._tm.font, 13))
             name.pack(side="left", padx=12)
-
         return dash
 
     def _on_theme_change(self, colors: dict):

@@ -52,16 +52,16 @@ class ExportView(ctk.CTkFrame):
         self.chk_pacientes.pack(anchor="w", padx=20, pady=(20, 10))
         self.chk_pacientes.select()
 
-        self.chk_medicos = ctk.CTkCheckBox(
+        self.chk_fisioterapeutas = ctk.CTkCheckBox(
             container, 
-            text="Médicos", 
+            text="Fisioterapeutas", 
             font=(self._tm.font, 14), 
             fg_color=self._tm.c("BLUE"), 
             hover_color=self._tm.c("DARK_BLUE"), 
             text_color=self._tm.c("BLACK")
         )
-        self.chk_medicos.pack(anchor="w", padx=20, pady=10)
-        self.chk_medicos.select()
+        self.chk_fisioterapeutas.pack(anchor="w", padx=20, pady=10)
+        self.chk_fisioterapeutas.select()
 
         self.chk_consultas = ctk.CTkCheckBox(
             container, 
@@ -90,8 +90,8 @@ class ExportView(ctk.CTkFrame):
         tabelas = []
         if self.chk_pacientes.get(): 
             tabelas.append("pacientes")
-        if self.chk_medicos.get(): 
-            tabelas.append("medicos")
+        if self.chk_fisioterapeutas.get(): 
+            tabelas.append("fisioterapeutas")
         if self.chk_consultas.get(): 
             tabelas.append("consultas")
 

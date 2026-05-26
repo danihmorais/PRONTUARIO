@@ -40,7 +40,7 @@ LIGHT = {
     "BORDER":       "#E2E8F0",
     "TOPBAR_BG":    "#2563EB",
     "TOPBAR_TEXT":  "#FFFFFF",
-    "TOPBAR_MUTED": "#FFFFFFAA",
+    "TOPBAR_MUTED": "#AAAAAA",
 }
 
 DARK = {

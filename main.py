@@ -28,11 +28,6 @@ try:
             executar_modo_update()
             sys.exit()
 
-        try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        except Exception:
-            pass
-
         ctk.set_default_color_theme("blue")
 
         app = AppController()

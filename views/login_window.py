@@ -25,7 +25,6 @@ class LoginWindow(ctk.CTk):
         self.monta_tabela_usuario()
         self._build_ui()
 
-        self.geometry(f"{self._width}x{self._height}")
         self.update_idletasks()
         self._center_window()
 
@@ -129,16 +128,14 @@ class LoginWindow(ctk.CTk):
         )
         self.subtitulo_rodape.place(x=648, y=456)
 
-    # ── Centralização ─────────────────────────────────────────────────────────
-
     def _center_window(self):
+        self.update_idletasks()
+        scale = self._get_window_scaling()
         sw = self.winfo_screenwidth()
         sh = self.winfo_screenheight()
-        x  = (sw - self._width)  // 2
-        y  = (sh - self._height) // 2
+        x = int(((sw - self._width)  // 2) * scale)
+        y = (sh - self._height) // 2
         self.geometry(f"{self._width}x{self._height}+{x}+{y}")
-
-    # ── Tema ──────────────────────────────────────────────────────────────────
 
     def _theme_icon(self) -> str:
         return "☀️" if self._tm.is_dark else "🌙"
@@ -180,8 +177,6 @@ class LoginWindow(ctk.CTk):
             hover_color=colors["GRAY_LIGHT"],
             text_color=colors["GRAY_DARK"],
         )
-
-    # ── Login / BD ────────────────────────────────────────────────────────────
 
     def login(self):
         self.conecta_bd()

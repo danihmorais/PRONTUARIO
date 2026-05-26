@@ -4,7 +4,8 @@ import sqlite3
 from datetime import datetime
 import customtkinter as ctk
 from PIL import Image
-
+import views.search_pacient_window as spw
+import views.search_doctor_window as sdw
 from config import BASE_DIR
 from theme_manager import ThemeManager
 from views.components.theme_switch import ThemeSwitch
@@ -86,7 +87,7 @@ class MainWindow(ctk.CTk):
 
         self._tw_add(logo_frame, fg_color="WHITE")
 
-        logo_icon = ctk.CTkFrame(
+        self.logo_icon = ctk.CTkFrame(
             logo_frame,
             width=32,
             height=32,
@@ -94,9 +95,19 @@ class MainWindow(ctk.CTk):
             corner_radius=8
         )
 
-        logo_icon.pack(side="left")
+        self.logo_icon.pack(side="left")
 
-        self._tw_add(logo_icon, fg_color="BLUE")
+        self.lbl_title = ctk.CTkLabel(
+            logo_frame,
+            text="PRONTUÁRIO",
+            font=(self._tm.font, 14, "bold"),
+            text_color=self._tm.c("BLACK"),
+            fg_color="transparent"
+        )
+
+        self.lbl_title.pack(side="left", padx=(10, 0))
+
+        self._tw_add(self.logo_icon, fg_color="BLUE")
 
         logo_path = os.path.join(BASE_DIR, "assets", "logo.png")
 
@@ -110,7 +121,7 @@ class MainWindow(ctk.CTk):
         self.logo_img = logo_img
 
         lbl_logo = ctk.CTkLabel(
-            logo_icon,
+            self.logo_icon,
             image=self.logo_img,
             text=""
         )
@@ -153,13 +164,15 @@ class MainWindow(ctk.CTk):
         self.bt_pacientes = self._nav_button(
             self.sidebar,
             "  Pacientes",
-            os.path.join(BASE_DIR, "assets", "icons", "people.png")
+            os.path.join(BASE_DIR, "assets", "icons", "people.png"),
+            command=self._open_search_pacient
         )
 
         self.bt_medicos = self._nav_button(
             self.sidebar,
             "  Médicos",
-            os.path.join(BASE_DIR, "assets", "icons", "personalcard.png")
+            os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"),
+            command=self._open_search_doctor
         )
 
         div2 = ctk.CTkFrame(
@@ -730,7 +743,8 @@ class MainWindow(ctk.CTk):
 
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["GRAY_BG"])
-
+        self.lbl_title.configure(text_color=colors["BLACK"])
+        self.logo_icon.configure(fg_color=colors["BLUE"])
         alive_widgets = []
 
         for entry in self._themed_widgets:
@@ -756,6 +770,12 @@ class MainWindow(ctk.CTk):
 
     def _open_appointment(self):
         self.controller.open_appointment(self)
+
+    def _open_search_pacient(self):
+        self.controller.open_search_pacient(self)
+
+    def _open_search_doctor(self):
+        self.controller.open_search_doctor(self)
 
     def _close_window(self):
         self._tm.unsubscribe(self._on_theme_change)

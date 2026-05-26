@@ -24,6 +24,14 @@ class LoginWindow(ctk.CTk):
 
         self.monta_tabela_usuario()
         self._build_ui()
+        self.bind("<Return>", lambda event: self.login())
+        self.theme_switch = ThemeSwitch(
+            self)
+
+        self.theme_switch.place(
+            x=20,
+            y=20
+        )
 
         self.update_idletasks()
         self._center_window()
@@ -39,7 +47,7 @@ class LoginWindow(ctk.CTk):
         )
         self.lb_image = ctk.CTkLabel(self, image=self.bg_img, text="", fg_color=self._tm.c("WHITE"))
         self.lb_image.place(x=0, y=0)
-
+        
         self.logo_img = ctk.CTkImage(
             light_image=Image.open('assets/logo.png'),
             dark_image=Image.open('assets/logo.png'),
@@ -109,21 +117,26 @@ class LoginWindow(ctk.CTk):
             fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"),
             corner_radius=8, command=self.login
         )
-        self.bt_entrar.place(x=630, y=400)
+        self.bt_entrar.place(x=630, y=420)
 
-        self.theme_switch.grid(
-            row=0,
-            column=1,
-            padx=16,
-            pady=8
+        self.lb_feedback = ctk.CTkLabel(
+            self,
+            text="",
+            width=260,
+            text_color=self._tm.c("RED"),
+            font=(self._tm.font, 12),
+            fg_color=self._tm.c("BLUE_XL"),
+            justify="center"
         )
+
+        self.lb_feedback.place(x=610, y=390)
 
         self.subtitulo_rodape = ctk.CTkLabel(
             self,
             text='Dúvidas ou problemas? Entre em contato\ncom nosso suporte técnico.',
             text_color=self._tm.c("GRAY"), font=(self._tm.font, 10), justify='center', fg_color=self._tm.c("BLUE_XL")
         )
-        self.subtitulo_rodape.place(x=648, y=456)
+        self.subtitulo_rodape.place(x=648, y=462)
 
     def _center_window(self):
         self.update_idletasks()
@@ -134,11 +147,6 @@ class LoginWindow(ctk.CTk):
         y = (sh - self._height) // 2
         self.geometry(f"{self._width}x{self._height}+{x}+{y}")
 
-    def _theme_icon(self) -> str:
-        return "☀️" if self._tm.is_dark else "🌙"
-
-    def _toggle_theme(self):
-        self._tm.toggle()
 
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["WHITE"])
@@ -179,32 +187,45 @@ class LoginWindow(ctk.CTk):
             hover_color=colors["DARK_BLUE"],
             text_color=colors["TOPBAR_TEXT"],
         )
-        self._theme_btn.configure(
-            text=self._theme_icon(),
-            fg_color=colors["BLUE_XL"],
-            hover_color=colors["GRAY_LIGHT"],
-            text_color=colors["GRAY_DARK"],
+
+        self.lb_feedback.configure(
+            fg_color=colors["BLUE_XL"]
         )
 
     def login(self):
-        self.conecta_bd()
+        usuario = self.entry_usuario.get().strip()
+        senha = self.entry_senha.get().strip()
 
-        usuario = self.entry_usuario.get()
-        senha   = self.entry_senha.get()
+        if not usuario or not senha:
+            self.lb_feedback.configure(
+                text="Preencha usuário e senha."
+            )
+            return
+
+        self.conecta_bd()
 
         self.cursor.execute(
             "SELECT usuario FROM usuarios WHERE usuario = ? AND senha = ?",
             (usuario, senha)
         )
-        resultado = self.cursor.fetchall()
+
+        resultado = self.cursor.fetchone()
+
+        self.desconecta_bd()
 
         if resultado:
+            self.lb_feedback.configure(text="")
+
             self._tm.unsubscribe(self._on_theme_change)
             self.controller.open_main(self)
-        else:
-            self.entry_usuario.delete(0, END)
-            self.entry_senha.delete(0, END)
 
+        else:
+            self.lb_feedback.configure(
+                text="Usuário ou senha inválidos."
+            )
+
+            self.entry_senha.delete(0, END)
+            self.entry_senha.focus()
     def conecta_bd(self):
         self.conn   = sqlite3.connect('usuarios.bd')
         self.cursor = self.conn.cursor()

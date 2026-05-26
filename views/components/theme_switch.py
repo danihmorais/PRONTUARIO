@@ -1,5 +1,10 @@
+import os
 import customtkinter as ctk
+from PIL import Image
+
+from config import BASE_DIR
 from theme_manager import ThemeManager
+
 
 class ThemeSwitch(ctk.CTkButton):
 
@@ -7,22 +12,40 @@ class ThemeSwitch(ctk.CTkButton):
 
         self._tm = ThemeManager.get()
 
+        self.sun_icon = ctk.CTkImage(
+            light_image=Image.open(
+                os.path.join(BASE_DIR, "assets", "icons", "sun.png")
+            ),
+            dark_image=Image.open(
+                os.path.join(BASE_DIR, "assets", "icons", "sun.png")
+            ),
+            size=(35, 35)
+        )
+
+        self.moon_icon = ctk.CTkImage(
+            light_image=Image.open(
+                os.path.join(BASE_DIR, "assets", "icons", "moon.png")
+            ),
+            dark_image=Image.open(
+                os.path.join(BASE_DIR, "assets", "icons", "moon.png")
+            ),
+            size=(35, 35)
+        )
+
         super().__init__(
             parent,
 
-            text=self._icon(),
+            text="",
+
+            image=self._icon(),
 
             width=42,
             height=42,
 
             corner_radius=12,
 
-            font=(self._tm.font, 18),
-
             fg_color=self._tm.c("WHITE"),
             hover_color=self._tm.c("BLUE_XL"),
-
-            text_color=self._tm.c("GRAY_DARK"),
 
             border_width=1,
             border_color=self._tm.c("GRAY_LIGHT"),
@@ -35,7 +58,7 @@ class ThemeSwitch(ctk.CTkButton):
         self._tm.subscribe(self._on_theme_change)
 
     def _icon(self):
-        return "☀️" if self._tm.is_dark else "🌙"
+        return self.sun_icon if self._tm.is_dark else self.moon_icon
 
     def _toggle(self):
         self._tm.toggle()
@@ -43,12 +66,10 @@ class ThemeSwitch(ctk.CTkButton):
     def _on_theme_change(self, colors):
 
         self.configure(
-            text=self._icon(),
+            image=self._icon(),
 
             fg_color=colors["WHITE"],
             hover_color=colors["BLUE_XL"],
-
-            text_color=colors["GRAY_DARK"],
 
             border_color=colors["GRAY_LIGHT"]
         )
@@ -57,7 +78,7 @@ class ThemeSwitch(ctk.CTkButton):
 
         try:
             self._tm.unsubscribe(self._on_theme_change)
-        except:
+        except Exception:
             pass
 
         super().destroy()

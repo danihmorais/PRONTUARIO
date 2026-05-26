@@ -1,337 +1,199 @@
+import customtkinter as ctk
 import os
-from customtkinter import *
-from PIL import Image
-from theme_manager import ThemeManager
+from views.components.base_window import BaseWindow
 from config import BASE_DIR
-from views.components.theme_switch import ThemeSwitch
 
-class AppointmentWindow(CTkToplevel):
 
-    def __init__(self, parent, controller):
-        self._themed_widgets: list[dict] = []
-        self._tm = ThemeManager.get()
+class AppointmentWindow(BaseWindow):
 
-        super().__init__(parent)
-        self.controller = controller
+    def __init__(self, parent, controller, usuario=None):
+        super().__init__(
+            parent=parent,
+            controller=controller,
+            title="Prontuário - Consulta",
+            usuario=usuario,
+        )
 
-        self.title("Prontuário - Consultas")
-        self.geometry("1550x674+170+130")
-        self.resizable(False, False)
-        self.iconbitmap('assets/icon.ico')
-        self._tm.subscribe(self._on_theme_change)
-        self.configure(fg_color=self._tm.c("GRAY_BG"))
+        self.minsize(1280, 720)
+        self.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
 
-        self._build_topbar()
+        self.after(10, self._maximize)
+        self.transient(parent)
+        self.grab_set()
+
         self._build_tabview()
         self.agendar_consulta()
 
-        self.protocol("WM_DELETE_WINDOW", self.fechar_consulta)
+        self.protocol("WM_DELETE_WINDOW", self._fechar)
 
-    def _get_image(self, *path_parts):
-        try:
-            return Image.open(os.path.join(BASE_DIR, *path_parts))
-        except Exception:
-            return Image.new('RGBA', (32, 32), (0,0,0,0))
-
-    def _tw_add(self, widget, **color_keys):
-        self._themed_widgets.append({"widget": widget, "keys": color_keys})
-
-    def _label(self, parent, text, font_size=12, bold=False, **place_kwargs):
-        weight = "bold" if bold else "normal"
-        lbl = CTkLabel(parent, text=text, text_color=self._tm.c("BLACK"),
-                       font=(self._tm.font, font_size, weight))
-        lbl.place(**place_kwargs)
-        self._tw_add(lbl, text_color=self._tm.c("BLACK"))
-        return lbl
-
-    def _entry(self, parent, width, height=32, placeholder="", **place_kwargs):
-        ent = CTkEntry(
-            parent, width=width, height=height,
-            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
-            corner_radius=6,
-            border_color=self._tm.c("GRAY_DARK"), border_width=1,
-            text_color=self._tm.c("BLACK"),
-            font=(self._tm.font, 14, "normal"),
-            placeholder_text=placeholder,
-            placeholder_text_color=self._tm.c("GRAY"),
-        )
-        ent.place(**place_kwargs)
-        self._tw_add(ent, fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
-                       border_color=self._tm.c("GRAY_DARK"), text_color=self._tm.c("BLACK"))
-        return ent
-
-    def _combo(self, parent, width, values, **place_kwargs):
-        cb = CTkComboBox(
-            parent, width=width, height=32,
-            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
-            corner_radius=6,
-            border_color=self._tm.c("GRAY_DARK"), border_width=1,
-            button_color=self._tm.c("BLUE"), button_hover_color=self._tm.c("DARK_BLUE"),
-            dropdown_fg_color=self._tm.c("WHITE"),
-            dropdown_hover_color=self._tm.c("BLUE_XL"),
-            dropdown_text_color=self._tm.c("BLACK"),
-            dropdown_font=(self._tm.font, 14, "normal"),
-            text_color=self._tm.c("BLACK"),
-            font=(self._tm.font, 14, "normal"),
-            values=values,
-        )
-        cb.place(**place_kwargs)
-        self._tw_add(cb,
-                       fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
-                       border_color=self._tm.c("GRAY_DARK"), text_color=self._tm.c("BLACK"),
-                       button_color=self._tm.c("BLUE"), button_hover_color=self._tm.c("DARK_BLUE"),
-                       dropdown_fg_color=self._tm.c("WHITE"),
-                       dropdown_hover_color=self._tm.c("BLUE_XL"),
-                       dropdown_text_color=self._tm.c("BLACK"))
-        return cb
-
-    def _cal_button(self, parent, **place_kwargs):
-        icon = CTkImage(self._get_image("assets", "icons", "calendar-search.png"), size=(20, 20))
-        btn = CTkButton(
-            parent, width=32, height=32, text="", image=icon,
-            compound="left",
-            fg_color=self._tm.c("BLUE"), bg_color=self._tm.c("BLUE_XL"),
-            hover_color=self._tm.c("DARK_BLUE"), corner_radius=6,
-        )
-        btn.place(**place_kwargs)
-        self._tw_add(btn, fg_color="BLUE", bg_color="BLUE_XL",
-                       hover_color="DARK_BLUE")
-        return btn
-
-    def _search_button(self, parent, text, **place_kwargs):
-        btn = CTkButton(
-            parent, width=131, height=32, text=text,
-            compound="left",
-            fg_color=self._tm.c("BLUE"), bg_color=self._tm.c("BLUE_XL"),
-            hover_color=self._tm.c("DARK_BLUE"), corner_radius=6,
-        )
-        btn.place(**place_kwargs)
-        self._tw_add(btn, fg_color="BLUE", bg_color="BLUE_XL",
-                       hover_color="DARK_BLUE")
-        return btn
-
-    def _build_topbar(self):
-        self.fr_topbar = CTkFrame(self, width=1550, height=53,
-                                  fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
-        self.fr_topbar.place(x=0, y=0)
-        self._tw_add(self.fr_topbar, fg_color=self._tm.c("TOPBAR_BG"))
-
-        try:
-            img_bg = CTkImage(self._get_image("assets", "bg_topbar.png"), size=(691, 52))
-            lb_bg = CTkLabel(self.fr_topbar, image=img_bg, text="",
-                             fg_color=self._tm.c("TOPBAR_BG"))
-            lb_bg.place(x=858, y=0)
-            self._tw_add(lb_bg, fg_color=self._tm.c("TOPBAR_BG"))
-        except Exception:
-            pass
-
-        try:
-            icon_user = CTkImage(self._get_image("assets", "icons", "user.png"), size=(32, 32))
-            lb_icon = CTkLabel(self.fr_topbar, image=icon_user, text="",
-                               fg_color=self._tm.c("TOPBAR_BG"))
-            lb_icon.place(x=24, y=10)
-            self._tw_add(lb_icon, fg_color=self._tm.c("TOPBAR_BG"))
-        except Exception:
-            pass
-
-        lbl_nome = CTkLabel(self.fr_topbar, text="Bruno Álex",
-                            text_color=self._tm.c("TOPBAR_TEXT"),
-                            font=(self._tm.font, 12, "bold"), height=12)
-        lbl_nome.place(x=64, y=10)
-        self._tw_add(lbl_nome, text_color=self._tm.c("TOPBAR_TEXT"), fg_color=self._tm.c("TOPBAR_BG"))
-
-        lbl_nivel = CTkLabel(self.fr_topbar, text="Admin",
-                             text_color=self._tm.c("TOPBAR_TEXT"),
-                             font=(self._tm.font, 12, "normal"), height=12)
-        lbl_nivel.place(x=64, y=28)
-        self._tw_add(lbl_nivel, text_color=self._tm.c("TOPBAR_TEXT"), fg_color=self._tm.c("TOPBAR_BG"))
-
-        self._theme_btn = CTkButton(
-            self.fr_topbar,
-            text=self._theme_icon(),
-            width=32, height=28,
-            font=(self._tm.font, 14),
-            fg_color=self._tm.c("TOPBAR_BG"),
-            hover_color=self._tm.c("BLUE"),
-            text_color=self._tm.c("TOPBAR_TEXT"),
-            corner_radius=8,
-            command=self._toggle_theme,
-        )
-        self._theme_btn.place(relx=1.0, x=-48, y=12)
-
+    # =========================================================
+    # TABVIEW
+    # =========================================================
     def _build_tabview(self):
-        self.tbv_consulta = CTkTabview(
-            self, width=1502, height=580,
-            fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
-            border_color=self._tm.c("GRAY_LIGHT"), border_width=1.5,
-            corner_radius=8,
-            text_color=self._tm.c("TOPBAR_TEXT"),
-            segmented_button_fg_color=self._tm.c("GRAY"),
-            segmented_button_selected_color=self._tm.c("BLUE"),
-            segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
-            segmented_button_unselected_color=self._tm.c("GRAY_DARK"),
+
+        self.tbv_consulta = ctk.CTkTabview(
+            self,
+            fg_color=self._tm.c("WHITE"),
+            border_width=1.5,
         )
-        self.tbv_consulta.place(x=24, y=66)
-        self._tw_add(self.tbv_consulta,
-                       fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("GRAY_BG"),
-                       border_color=self._tm.c("GRAY_LIGHT"),
-                       text_color=self._tm.c("TOPBAR_TEXT"),
-                       segmented_button_fg_color=self._tm.c("GRAY"),
-                       segmented_button_selected_color=self._tm.c("BLUE"),
-                       segmented_button_selected_hover_color=self._tm.c("DARK_BLUE"),
-                       segmented_button_unselected_color=self._tm.c("GRAY_DARK"))
+
+        self.tbv_consulta.grid(
+            row=1, column=0, sticky="nsew", padx=20, pady=(66, 10)
+        )
 
         self.tab_agendar_consulta = self.tbv_consulta.add("Agendar Consulta")
-        self.tab_buscar_consulta  = self.tbv_consulta.add("Buscar Consulta")
+        self.tab_buscar_consulta = self.tbv_consulta.add("Buscar Consulta")
 
+        self.tab_agendar_consulta.grid_columnconfigure(0, weight=1)
+
+    # =========================================================
+    # FORMULÁRIO PRINCIPAL
+    # =========================================================
     def agendar_consulta(self):
-        fr = CTkFrame(self.tab_agendar_consulta,
-                      width=1458, height=418,
-                      fg_color=self._tm.c("BLUE_XL"),
-                      border_color=self._tm.c("BLUE"), border_width=1,
-                      corner_radius=6)
-        fr.place(x=14, y=10)
-        self._tw_add(fr, fg_color=self._tm.c("BLUE_XL"), border_color=self._tm.c("BLUE"))
 
-        self._label(fr, "DADOS DO PACIENTE", 14, bold=True, x=16, y=18)
+        container = ctk.CTkScrollableFrame(self.tab_agendar_consulta)
+        container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        self._search_button(fr, "Buscar paciente", x=16, y=72)
+        fr = ctk.CTkFrame(container)
+        fr.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
 
-        self._label(fr, "Nome completo",       x=163, y=46)
-        self.ent_nome_paciente_agendamento = self._entry(fr, 342, x=163, y=72)
+        fr.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="cols")
 
-        self._label(fr, "Data de nascimento",  x=521, y=46)
-        self.ent_nascimento_paciente_agendamento = self._entry(
-            fr, 150, placeholder="dd/mm/aaaa", x=521, y=72)
-        self._cal_button(fr, x=678, y=72)
+        # =========================================================
+        # PACIENTE
+        # =========================================================
+        pac = self._section(fr, "DADOS DO PACIENTE")
+        pac.grid(row=0, column=0, columnspan=4, sticky="ew", pady=10)
 
-        self._label(fr, "CPF",  x=730, y=46)
-        self.ent_cpf_paciente_agendamento = self._entry(fr, 178, x=730, y=72)
-
-        self._label(fr, "Sexo", x=924, y=46)
-        self.cb_sexo_paciente_agendamento = self._combo(
-            fr, 176,
-            ["Masculino", "Feminino", "Não-binário",
-             "Agênero", "Gênero fluido", "Não declarado"],
-            x=924, y=72)
-
-        self._label(fr, "E-Mail", x=1116, y=46)
-        self.ent_email_paciente_agendamento = self._entry(fr, 324, x=1116, y=72)
-
-        self._label(fr, "Celular/Telefone", x=16,  y=108)
-        self._combo(fr, 228,
-                    ["Celular", "Celular/WhatsApp", "Telefone"], x=16, y=134)
-
-        self._label(fr, "Tipo de contato", x=262, y=108)
-        self._combo(fr, 228,
-                    ["Pessoal", "Residencial", "Comercial"], x=262, y=134)
-
-        self._label(fr, "Número", x=508, y=108)
-        self.ent_celular_paciente_agendamento = self._entry(
-            fr, 200, placeholder="Ex. 7190000-0000", x=508, y=134)
-
-        self._label(fr, "Observação", x=725, y=108)
-        self.ent_obsevacao_celular_paciente_agendamento = self._entry(
-            fr, 716, x=725, y=134)
-
-        self._label(fr, "DADOS DO MÉDICO", 14, bold=True, x=16, y=190)
-
-        self._search_button(fr, "Buscar médico", x=16, y=244)
-
-        self._label(fr, "Nome do médico",   x=164, y=218)
-        self.ent_nome_medico_agendamento = self._entry(fr, 434, x=164, y=244)
-
-        self._label(fr, "Especialidade 1",  x=618, y=218)
-        self.ent_especialidade1_medico_agendamento = self._entry(fr, 272, x=618, y=244)
-
-        self._label(fr, "Especialidade 2",  x=908, y=218)
-        self.ent_especialidade2_medico_agendamento = self._entry(fr, 272, x=908, y=244)
-
-        self._label(fr, "CRM/CFM",          x=1198, y=218)
-        self.ent_crm_medico_agendamento = self._entry(fr, 242, x=1198, y=244)
-
-        self._label(fr, "DADOS DA CONSULTA", 14, bold=True, x=16, y=300)
-
-        self._label(fr, "Convênio médico",   x=16,  y=328)
-        self.cb_convenio_agendamento = self._combo(
-            fr, 150, ["Sim", "Não"], x=16, y=354)
-
-        self._label(fr, "Plano de saúde",    x=184, y=328)
-        self.cb_plano_saude_agendamento = self._combo(
-            fr, 350,
-            ["Amil", "Bradesco Saúde", "SulAmérica Saúde", "Unimed",
-             "Golden Cross", "Hapvida", "NotreDame Intermédica",
-             "Porto Seguro Saúde", "São Francisco Saúde", "Medial Saúde", "SUS"],
-            x=184, y=354)
-
-        self._label(fr, "Data da consulta",   x=554, y=328)
-        self.ent_data_consulta_agendamento = self._entry(
-            fr, 170, placeholder="dd/mm/aaaa", x=554, y=354)
-        self._cal_button(fr, x=732, y=354)
-
-        self._label(fr, "Horário da consulta", x=788, y=328)
-        self.ent_hora_consulta_agendamento = self._entry(
-            fr, 170, placeholder="Ex. 09:30", x=788, y=354)
-
-        self._label(fr, "Observação",          x=978, y=328)
-        self.ent_observacao_convenio_agendamento = self._entry(fr, 462, x=978, y=354)
-
-        bt_cancel = CTkButton(
-            self.tbv_consulta, width=148, height=40, text="Cancelar",
-            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
-            fg_color=self._tm.c("WHITE"), hover_color=self._tm.c("BLUE_XL"),
-            border_color=self._tm.c("BLUE"), border_width=1.5,
-            corner_radius=8, command=self.fechar_consulta,
+        self.ent_nome_paciente_agendamento = self._field(pac, "Nome", 0, 0, 2)
+        self.ent_nascimento_paciente_agendamento = self._field(
+            pac, "Nascimento", 0, 2, 1, calendar=True
         )
-        bt_cancel.place(x=38, y=510)
-        self._tw_add(bt_cancel, text_color=self._tm.c("BLUE"), fg_color=self._tm.c("WHITE"),
-                       hover_color=self._tm.c("BLUE_XL"), border_color=self._tm.c("BLUE"))
+        self.ent_cpf_paciente_agendamento = self._field(pac, "CPF", 1, 0)
+        self.cb_sexo_paciente_agendamento = self._combo(pac, "Sexo", 1, 1)
+        self.ent_email_paciente_agendamento = self._field(pac, "Email", 1, 2)
 
-        bt_clear = CTkButton(
-            self.tbv_consulta, width=148, height=40, text="Limpar",
-            text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
-            fg_color=self._tm.c("BLUE_XL"), hover_color=self._tm.c("GRAY_LIGHT"),
-            corner_radius=8,
+        # =========================================================
+        # MÉDICO
+        # =========================================================
+        med = self._section(fr, "DADOS DO MÉDICO")
+        med.grid(row=1, column=0, columnspan=4, sticky="ew", pady=10)
+
+        self.ent_nome_medico_agendamento = self._field(med, "Nome", 0, 0, 2)
+        self.ent_especialidade1_medico_agendamento = self._field(med, "Especialidade 1", 0, 2)
+        self.ent_especialidade2_medico_agendamento = self._field(med, "Especialidade 2", 1, 0)
+        self.ent_crm_medico_agendamento = self._field(med, "CRM", 1, 1)
+
+        # =========================================================
+        # CONSULTA
+        # =========================================================
+        con = self._section(fr, "DADOS DA CONSULTA")
+        con.grid(row=2, column=0, columnspan=4, sticky="ew", pady=10)
+
+        self.cb_convenio_agendamento = self._combo(con, "Convênio", 0, 0)
+        self.cb_plano_saude_agendamento = self._combo(con, "Plano", 0, 1)
+
+        self.ent_data_consulta_agendamento = self._field(
+            con, "Data", 0, 2, calendar=True
         )
-        bt_clear.place(x=1144, y=510)
-        self._tw_add(bt_clear, text_color=self._tm.c("BLUE"), fg_color=self._tm.c("BLUE_XL"),
-                       hover_color=self._tm.c("GRAY_LIGHT"))
+        self.ent_hora_consulta_agendamento = self._field(con, "Hora", 0, 3)
 
-        bt_save = CTkButton(
-            self.tbv_consulta, width=148, height=40, text="Agendar",
-            text_color=self._tm.c("TOPBAR_TEXT"), font=(self._tm.font, 12, "bold"),
-            fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"),
-            corner_radius=8,
-        )
-        bt_save.place(x=1312, y=510)
-        self._tw_add(bt_save, text_color=self._tm.c("TOPBAR_TEXT"),
-                       fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"))
-
-    def _theme_icon(self) -> str:
-        return "☀️" if self._tm.is_dark else "🌙"
-
-    def _toggle_theme(self):
-        self._tm.toggle()
-
-    def _on_theme_change(self, colors: dict):
-        self.configure(fg_color=colors["GRAY_BG"])
-
-        for entry in self._themed_widgets:
-            widget = entry["widget"]
-            keys   = entry["keys"]
-            try:
-                kwargs = {param: colors[ck] for param, ck in keys.items()}
-                widget.configure(**kwargs)
-            except Exception:
-                pass
-
-        self._theme_btn.configure(
-            text=self._theme_icon(),
-            fg_color=colors["TOPBAR_BG"],
-            hover_color=colors["BLUE"],
-            text_color=colors["TOPBAR_TEXT"],
+        self.ent_observacao_convenio_agendamento = self._field(
+            con, "Observação", 1, 0, 4
         )
 
-    def fechar_consulta(self):
-        self._tm.unsubscribe(self._on_theme_change)
-        self.destroy()
+        # =========================================================
+        # BOTÕES
+        # =========================================================
+        btns = ctk.CTkFrame(fr)
+        btns.grid(row=3, column=0, columnspan=4, sticky="ew", pady=20)
+
+        ctk.CTkButton(btns, text="Cancelar", command=self._fechar).pack(
+            side="left", padx=10
+        )
+        ctk.CTkButton(btns, text="Limpar", command=self.limpar_campos).pack(
+            side="right", padx=10
+        )
+        ctk.CTkButton(btns, text="Agendar", command=self.salvar_consulta).pack(
+            side="right", padx=10
+        )
+
+    # =========================================================
+    # HELPERS
+    # =========================================================
+    def _section(self, parent, title):
+        frame = ctk.CTkFrame(parent)
+        frame.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="cols")
+
+        label = ctk.CTkLabel(
+            frame,
+            text=title,
+            font=(self._tm.font, 14, "bold"),
+        )
+        label.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 5), columnspan=4)
+
+        return frame
+
+    def _field(self, parent, label, row, col, colspan=1, calendar=False):
+
+        lbl = ctk.CTkLabel(parent, text=label)
+        lbl.grid(row=row * 2 + 1, column=col, sticky="w", padx=10)
+
+        entry = ctk.CTkEntry(parent)
+        entry.grid(
+            row=row * 2 + 2,
+            column=col,
+            columnspan=colspan,
+            sticky="ew",
+            padx=10,
+            pady=(0, 10),
+        )
+
+        if calendar:
+            btn = ctk.CTkButton(
+                parent,
+                text="📅",
+                width=30,
+                command=lambda: self.pop_calendario(entry),
+            )
+            btn.grid(row=row * 2 + 2, column=col + 1, sticky="w")
+
+        return entry
+
+    def _combo(self, parent, label, row, col):
+
+        lbl = ctk.CTkLabel(parent, text=label)
+        lbl.grid(row=row * 2 + 1, column=col, sticky="w", padx=10)
+
+        combo = ctk.CTkComboBox(
+            parent,
+            values=["Sim", "Não", "N/A"],
+        )
+        combo.grid(row=row * 2 + 2, column=col, sticky="ew", padx=10, pady=(0, 10))
+
+        return combo
+
+    # =========================================================
+    # AÇÕES
+    # =========================================================
+    def limpar_campos(self):
+        for attr in dir(self):
+            w = getattr(self, attr)
+            if isinstance(w, (ctk.CTkEntry, ctk.CTkComboBox)):
+                try:
+                    w.delete(0, "end")
+                except:
+                    w.set("")
+
+    def pop_calendario(self, entry):
+        entry.delete(0, "end")
+        entry.insert(0, "01/01/2026")
+
+    def buscar_paciente(self):
+        pass
+
+    def buscar_medico(self):
+        pass
+
+    def salvar_consulta(self):
+        pass

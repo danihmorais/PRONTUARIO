@@ -1,57 +1,54 @@
-import ctypes
+import traceback
 import sys
-import threading
-import time
 
-import customtkinter as ctk
+try:
+    import ctypes
+    import threading
+    import time
+    import customtkinter as ctk
 
-from controllers.app_controller import AppController
-from updater import (
-    verificar_e_atualizar,
-    perguntar_atualizacao,
-    executar_modo_update,
-)
+    from controllers.app_controller import AppController
+    from updater import (
+        verificar_e_atualizar,
+        perguntar_atualizacao,
+        executar_modo_update,
+    )
 
+    def checar_update_background(app_root):
+        try:
+            data = verificar_e_atualizar()
+            if not data:
+                return
+            app_root.after(0, lambda: perguntar_atualizacao(data))
+        except Exception:
+            pass
 
-def checar_update_background(app_root):
-    try:
-        data = verificar_e_atualizar()
+    if __name__ == "__main__":
+        if "--apply-update" in sys.argv:
+            executar_modo_update()
+            sys.exit()
 
-        if not data:
-            return
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            pass
 
-        app_root.after(
-            0,
-            lambda: perguntar_atualizacao(data)
-        )
+        ctk.set_default_color_theme("blue")
 
-    except Exception as e:
-        print(e)
+        app = AppController()
+        app.iniciar()
 
+        threading.Thread(
+            target=lambda: (
+                time.sleep(2),
+                checar_update_background(app.app)
+            ),
+            daemon=True
+        ).start()
 
-if __name__ == "__main__":
+        app.app.mainloop()
 
-    if "--apply-update" in sys.argv:
-        executar_modo_update()
-        sys.exit()
-
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(2)
-    except Exception:
-        pass
-
-    ctk.set_default_color_theme("blue")
-
-    app = AppController()
-
-    app.iniciar()
-
-    threading.Thread(
-        target=lambda: (
-            time.sleep(2),
-            checar_update_background(app.app)
-        ),
-        daemon=True
-    ).start()
-
-    app.app.mainloop()
+except Exception as e:
+    print("ERRO CRÍTICO NA INICIALIZAÇÃO:")
+    traceback.print_exc()
+    input("\nPressione ENTER para fechar a janela...")

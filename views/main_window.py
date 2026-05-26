@@ -1,7 +1,8 @@
+import os
 import customtkinter as ctk
 from PIL import Image
 from theme_manager import ThemeManager
-
+from config import BASE_DIR
 
 class MainWindow(ctk.CTk):
 
@@ -26,18 +27,12 @@ class MainWindow(ctk.CTk):
 
         self.protocol("WM_DELETE_WINDOW", self._close_window)
 
-    # ───────────────────────────────
-    # THEME REGISTRY
-    # ───────────────────────────────
     def _tw_add(self, widget, **color_keys):
         self._themed_widgets.append({
             "widget": widget,
             "keys": color_keys
         })
 
-    # ───────────────────────────────
-    # SIDEBAR
-    # ───────────────────────────────
     def _build_sidebar(self):
         sb = ctk.CTkFrame(
             self,
@@ -52,7 +47,6 @@ class MainWindow(ctk.CTk):
         sb.pack_propagate(False)
         self._tw_add(sb, fg_color="WHITE", border_color="GRAY_LIGHT")
 
-        # LOGO
         logo_frame = ctk.CTkFrame(sb, fg_color=self._tm.c("WHITE"), corner_radius=0)
         logo_frame.pack(fill="x", padx=20, pady=(28, 20))
         self._tw_add(logo_frame, fg_color="WHITE")
@@ -67,7 +61,7 @@ class MainWindow(ctk.CTk):
         logo_icon.pack(side="left")
         self._tw_add(logo_icon, fg_color="BLUE")
 
-        img = Image.open("assets/logo.png")
+        img = Image.open(os.path.join(BASE_DIR, "assets", "logo.png"))
         logo_img = ctk.CTkImage(light_image=img, dark_image=img, size=(20, 20))
 
         lbl_logo = ctk.CTkLabel(
@@ -79,20 +73,19 @@ class MainWindow(ctk.CTk):
 
         self.logo_img = logo_img
 
-        # DIV
         div1 = ctk.CTkFrame(sb, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div1.pack(fill="x")
         self._tw_add(div1, fg_color="GRAY_LIGHT")
 
         self._nav_section(sb, "PRINCIPAL")
 
-        self.bt_dashboard = self._nav_button(sb, "  Dashboard", "assets/icons/graph.png", active=True)
-        self.bt_consultas = self._nav_button(sb, "  Consultas", "assets/icons/clipboard.png",
-                                             command=self._open_consulta)
-        self.bt_cadastro = self._nav_button(sb, "  Cadastro", "assets/icons/personalcard.png",
-                                            command=self._open_cadastro)
-        self.bt_pacientes = self._nav_button(sb, "  Pacientes", "assets/icons/people.png")
-        self.bt_medicos = self._nav_button(sb, "  Médicos", "assets/icons/personalcard.png")
+        self.bt_dashboard = self._nav_button(sb, "  Dashboard", os.path.join(BASE_DIR, "assets", "icons", "graph.png"), active=True)
+        self.bt_consultas = self._nav_button(sb, "  Consultas", os.path.join(BASE_DIR, "assets", "icons", "clipboard.png"),
+                                             command=self._open_appointment)
+        self.bt_cadastro = self._nav_button(sb, "  Cadastro", os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"),
+                                            command=self._open_form)
+        self.bt_pacientes = self._nav_button(sb, "  Pacientes", os.path.join(BASE_DIR, "assets", "icons", "people.png"))
+        self.bt_medicos = self._nav_button(sb, "  Médicos", os.path.join(BASE_DIR, "assets", "icons", "personalcard.png"))
 
         div2 = ctk.CTkFrame(sb, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div2.pack(fill="x", padx=16, pady=(8, 0))
@@ -100,8 +93,8 @@ class MainWindow(ctk.CTk):
 
         self._nav_section(sb, "SISTEMA")
 
-        self.bt_exportar = self._nav_button(sb, "  Exportar dados", "assets/icons/document.png")
-        self.bt_config = self._nav_button(sb, "  Configurações", "assets/icons/setting.png")
+        self.bt_exportar = self._nav_button(sb, "  Exportar dados", os.path.join(BASE_DIR, "assets", "icons", "document.png"))
+        self.bt_config = self._nav_button(sb, "  Configurações", os.path.join(BASE_DIR, "assets", "icons", "setting.png"))
 
         footer = ctk.CTkFrame(sb, fg_color=self._tm.c("WHITE"), corner_radius=0)
         footer.pack(side="bottom", fill="x", padx=12, pady=12)
@@ -129,9 +122,9 @@ class MainWindow(ctk.CTk):
                      hover_color="RED_LIGHT",
                      border_color="GRAY_LIGHT")
 
-    def _nav_section(self, label):
+    def _nav_section(self, parent_widget, label):
         lbl = ctk.CTkLabel(
-            self,
+            parent_widget,
             text=label,
             text_color=self._tm.c("GRAY"),
             font=(self._tm.font, 10, "bold")
@@ -139,7 +132,7 @@ class MainWindow(ctk.CTk):
         lbl.pack(anchor="w", padx=20, pady=(12, 4))
         self._tw_add(lbl, text_color="GRAY")
 
-    def _nav_button(self, text, icon_path=None, active=False, command=None):
+    def _nav_button(self, parent_widget, text, icon_path=None, active=False, command=None):
         icon = None
         if icon_path:
             try:
@@ -152,7 +145,7 @@ class MainWindow(ctk.CTk):
         hc = self._tm.c("DARK_BLUE") if active else self._tm.c("BLUE_XL")
 
         btn = ctk.CTkButton(
-            self,
+            parent_widget,
             image=icon,
             compound="left",
             text=text,
@@ -175,9 +168,6 @@ class MainWindow(ctk.CTk):
 
         return btn
 
-    # ───────────────────────────────
-    # TOPBAR
-    # ───────────────────────────────
     def _build_topbar(self):
         topbar = ctk.CTkFrame(self, height=56, fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
         topbar.place(x=220, y=0, relwidth=1)
@@ -217,9 +207,6 @@ class MainWindow(ctk.CTk):
     def _toggle_theme(self):
         self._tm.toggle()
 
-    # ───────────────────────────────
-    # DASHBOARD
-    # ───────────────────────────────
     def _build_dashboard(self):
         x_start = 240
         y_start = 80
@@ -238,9 +225,6 @@ class MainWindow(ctk.CTk):
             font=(self._tm.font, 13)
         ).place(x=x_start, y=y_start + 30)
 
-    # ───────────────────────────────
-    # THEME UPDATE
-    # ───────────────────────────────
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["GRAY_BG"])
 
@@ -262,9 +246,6 @@ class MainWindow(ctk.CTk):
             text_color=colors["TOPBAR_TEXT"]
         )
 
-    # ───────────────────────────────
-    # CALLBACKS
-    # ───────────────────────────────
     def _open_form(self):
         self.controller.open_form(self)
 

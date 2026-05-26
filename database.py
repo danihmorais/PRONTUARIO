@@ -1,8 +1,9 @@
 import sqlite3
 import hashlib
+from config import DB_PATH
 
 def inicializar_banco():
-    conn = sqlite3.connect('prontuario.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''

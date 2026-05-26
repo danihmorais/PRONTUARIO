@@ -1,9 +1,10 @@
+import os
 from customtkinter import *
 from PIL import Image
 from theme_manager import ThemeManager
+from config import BASE_DIR
 
-
-class AppointmentWindows(CTkToplevel):
+class AppointmentWindow(CTkToplevel):
 
     def __init__(self, parent, controller):
         self._themed_widgets: list[dict] = []
@@ -25,12 +26,14 @@ class AppointmentWindows(CTkToplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.fechar_consulta)
 
-    # ── Registro ─────────────────────────────────────────────────────────────
+    def _get_image(self, *path_parts):
+        try:
+            return Image.open(os.path.join(BASE_DIR, *path_parts))
+        except Exception:
+            return Image.new('RGBA', (32, 32), (0,0,0,0))
 
     def _tw_add(self, widget, **color_keys):
         self._themed_widgets.append({"widget": widget, "keys": color_keys})
-
-    # ── Helpers ──────────────────────────────────────────────────────────────
 
     def _label(self, parent, text, font_size=12, bold=False, **place_kwargs):
         weight = "bold" if bold else "normal"
@@ -82,7 +85,7 @@ class AppointmentWindows(CTkToplevel):
         return cb
 
     def _cal_button(self, parent, **place_kwargs):
-        icon = CTkImage(Image.open("assets/icons/calendar-search.png"), size=(20, 20))
+        icon = CTkImage(self._get_image("assets", "icons", "calendar-search.png"), size=(20, 20))
         btn = CTkButton(
             parent, width=32, height=32, text="", image=icon,
             compound="left",
@@ -106,8 +109,6 @@ class AppointmentWindows(CTkToplevel):
                        hover_color="DARK_BLUE")
         return btn
 
-    # ── Topbar ───────────────────────────────────────────────────────────────
-
     def _build_topbar(self):
         self.fr_topbar = CTkFrame(self, width=1550, height=53,
                                   fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
@@ -115,7 +116,7 @@ class AppointmentWindows(CTkToplevel):
         self._tw_add(self.fr_topbar, fg_color=self._tm.c("TOPBAR_BG"))
 
         try:
-            img_bg = CTkImage(Image.open("assets/bg_topbar.png"), size=(691, 52))
+            img_bg = CTkImage(self._get_image("assets", "bg_topbar.png"), size=(691, 52))
             lb_bg = CTkLabel(self.fr_topbar, image=img_bg, text="",
                              fg_color=self._tm.c("TOPBAR_BG"))
             lb_bg.place(x=858, y=0)
@@ -124,7 +125,7 @@ class AppointmentWindows(CTkToplevel):
             pass
 
         try:
-            icon_user = CTkImage(Image.open("assets/icons/user.png"), size=(32, 32))
+            icon_user = CTkImage(self._get_image("assets", "icons", "user.png"), size=(32, 32))
             lb_icon = CTkLabel(self.fr_topbar, image=icon_user, text="",
                                fg_color=self._tm.c("TOPBAR_BG"))
             lb_icon.place(x=24, y=10)
@@ -144,7 +145,6 @@ class AppointmentWindows(CTkToplevel):
         lbl_nivel.place(x=64, y=28)
         self._tw_add(lbl_nivel, text_color=self._tm.c("TOPBAR_TEXT"), fg_color=self._tm.c("TOPBAR_BG"))
 
-        # Botão de tema
         self._theme_btn = CTkButton(
             self.fr_topbar,
             text=self._theme_icon(),
@@ -157,8 +157,6 @@ class AppointmentWindows(CTkToplevel):
             command=self._toggle_theme,
         )
         self._theme_btn.place(relx=1.0, x=-48, y=12)
-
-    # ── TabView ──────────────────────────────────────────────────────────────
 
     def _build_tabview(self):
         self.tbv_consulta = CTkTabview(
@@ -185,8 +183,6 @@ class AppointmentWindows(CTkToplevel):
         self.tab_agendar_consulta = self.tbv_consulta.add("Agendar Consulta")
         self.tab_buscar_consulta  = self.tbv_consulta.add("Buscar Consulta")
 
-    # ── Aba Agendar ───────────────────────────────────────────────────────────
-
     def agendar_consulta(self):
         fr = CTkFrame(self.tab_agendar_consulta,
                       width=1458, height=418,
@@ -196,7 +192,6 @@ class AppointmentWindows(CTkToplevel):
         fr.place(x=14, y=10)
         self._tw_add(fr, fg_color=self._tm.c("BLUE_XL"), border_color=self._tm.c("BLUE"))
 
-        # ── DADOS DO PACIENTE ─────────────────────────────────────────────
         self._label(fr, "DADOS DO PACIENTE", 14, bold=True, x=16, y=18)
 
         self._search_button(fr, "Buscar paciente", x=16, y=72)
@@ -238,7 +233,6 @@ class AppointmentWindows(CTkToplevel):
         self.ent_obsevacao_celular_paciente_agendamento = self._entry(
             fr, 716, x=725, y=134)
 
-        # ── DADOS DO MÉDICO ───────────────────────────────────────────────
         self._label(fr, "DADOS DO MÉDICO", 14, bold=True, x=16, y=190)
 
         self._search_button(fr, "Buscar médico", x=16, y=244)
@@ -255,7 +249,6 @@ class AppointmentWindows(CTkToplevel):
         self._label(fr, "CRM/CFM",          x=1198, y=218)
         self.ent_crm_medico_agendamento = self._entry(fr, 242, x=1198, y=244)
 
-        # ── DADOS DA CONSULTA ─────────────────────────────────────────────
         self._label(fr, "DADOS DA CONSULTA", 14, bold=True, x=16, y=300)
 
         self._label(fr, "Convênio médico",   x=16,  y=328)
@@ -282,7 +275,6 @@ class AppointmentWindows(CTkToplevel):
         self._label(fr, "Observação",          x=978, y=328)
         self.ent_observacao_convenio_agendamento = self._entry(fr, 462, x=978, y=354)
 
-        # ── Botões de ação ────────────────────────────────────────────────
         bt_cancel = CTkButton(
             self.tbv_consulta, width=148, height=40, text="Cancelar",
             text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
@@ -314,8 +306,6 @@ class AppointmentWindows(CTkToplevel):
         self._tw_add(bt_save, text_color=self._tm.c("TOPBAR_TEXT"),
                        fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"))
 
-    # ── Callback de tema ──────────────────────────────────────────────────────
-
     def _theme_icon(self) -> str:
         return "☀️" if self._tm.is_dark else "🌙"
 
@@ -331,8 +321,8 @@ class AppointmentWindows(CTkToplevel):
             try:
                 kwargs = {param: colors[ck] for param, ck in keys.items()}
                 widget.configure(**kwargs)
-            except Exception as e:
-                print(f"[ConsultaWindows] erro ao reconfigurar {widget}: {e}")
+            except Exception:
+                pass
 
         self._theme_btn.configure(
             text=self._theme_icon(),
@@ -340,8 +330,6 @@ class AppointmentWindows(CTkToplevel):
             hover_color=colors["BLUE"],
             text_color=colors["TOPBAR_TEXT"],
         )
-
-    # ── Fechar ────────────────────────────────────────────────────────────────
 
     def fechar_consulta(self):
         self._tm.unsubscribe(self._on_theme_change)

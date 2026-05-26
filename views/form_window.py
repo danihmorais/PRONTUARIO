@@ -1,9 +1,10 @@
+import os
 from customtkinter import *
 from tkinter import END
 from PIL import Image
 from tkcalendar import Calendar
 from theme_manager import ThemeManager
-
+from config import BASE_DIR
 
 class FormWindow(CTkToplevel):
 
@@ -28,15 +29,16 @@ class FormWindow(CTkToplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.fechar_cadastro)
 
-    # ── Registro de widgets temáticos ────────────────────────────────────────
+    def _get_image(self, *path_parts):
+        try:
+            return Image.open(os.path.join(BASE_DIR, *path_parts))
+        except Exception:
+            return Image.new('RGBA', (32, 32), (0,0,0,0))
 
     def _tw_add(self, widget, **color_keys):
         self._themed_widgets.append({"widget": widget, "keys": color_keys})
 
-    # ── Helpers de construção ────────────────────────────────────────────────
-
     def _label(self, parent, text, font_size=12, bold=False, **place_kwargs):
-        """Label padrão com registro automático de tema."""
         weight = "bold" if bold else "normal"
         lbl = CTkLabel(parent, text=text, text_color=self._tm.c("BLACK"),
                        font=(self._tm.font, font_size, weight))
@@ -46,7 +48,6 @@ class FormWindow(CTkToplevel):
 
     def _entry(self, parent, width, height=32, disabled=False,
                placeholder="", **place_kwargs):
-        """Entry padrão com registro automático de tema."""
         state = "disabled" if disabled else "normal"
         fg = self._tm.c("GRAY_LIGHT") if disabled else self._tm.c("WHITE")
         ent = CTkEntry(
@@ -70,7 +71,6 @@ class FormWindow(CTkToplevel):
         return ent
 
     def _combo(self, parent, width, values, **place_kwargs):
-        """ComboBox padrão com registro automático de tema."""
         cb = CTkComboBox(
             parent, width=width, height=32,
             fg_color=self._tm.c("WHITE"), bg_color=self._tm.c("BLUE_XL"),
@@ -96,7 +96,6 @@ class FormWindow(CTkToplevel):
         return cb
 
     def _section_frame(self, parent, width=1117, height=458):
-        """Frame de seção com fundo azul claro."""
         fr = CTkFrame(parent, width=width, height=height,
                       fg_color=self._tm.c("BLUE_XL"),
                       border_color=self._tm.c("BLUE"), border_width=1,
@@ -106,7 +105,7 @@ class FormWindow(CTkToplevel):
         return fr
 
     def _cal_button(self, parent, command, **place_kwargs):
-        icon = CTkImage(Image.open("assets/icons/calendar-search.png"), size=(20, 20))
+        icon = CTkImage(self._get_image("assets", "icons", "calendar-search.png"), size=(20, 20))
         btn = CTkButton(
             parent, width=32, height=32, text="", image=icon,
             compound="left",
@@ -120,7 +119,6 @@ class FormWindow(CTkToplevel):
         return btn
 
     def _action_buttons(self, parent, limpar_cmd, y=500):
-        """Trio de botões Cancelar / Limpar / Cadastrar."""
         bt_cancel = CTkButton(
             parent, width=148, height=40, text="Cancelar",
             text_color=self._tm.c("BLUE"), font=(self._tm.font, 12, "bold"),
@@ -154,45 +152,42 @@ class FormWindow(CTkToplevel):
 
         return bt_cancel, bt_clear, bt_save
 
-    # ── Topbar ───────────────────────────────────────────────────────────────
-
     def _build_topbar(self):
         self.fr_topbar = CTkFrame(self, width=1200, height=53,
-                                  fg_color=self.TOPBAR_BG, corner_radius=0)
+                                  fg_color=self._tm.c("TOPBAR_BG"), corner_radius=0)
         self.fr_topbar.place(x=0, y=0)
         self._tw_add(self.fr_topbar, fg_color="TOPBAR_BG")
 
         try:
-            img_bg = CTkImage(Image.open("assets/bg_topbar.png"), size=(691, 52))
+            img_bg = CTkImage(self._get_image("assets", "bg_topbar.png"), size=(691, 52))
             lb_bg = CTkLabel(self.fr_topbar, image=img_bg, text="",
-                             fg_color=self.TOPBAR_BG)
+                             fg_color=self._tm.c("TOPBAR_BG"))
             lb_bg.place(x=515, y=0)
             self._tw_add(lb_bg, fg_color="TOPBAR_BG")
         except Exception:
             pass
 
         try:
-            icon_user = CTkImage(Image.open("assets/icons/user.png"), size=(32, 32))
+            icon_user = CTkImage(self._get_image("assets", "icons", "user.png"), size=(32, 32))
             lb_icon = CTkLabel(self.fr_topbar, image=icon_user, text="",
-                               fg_color=self.TOPBAR_BG)
+                               fg_color=self._tm.c("TOPBAR_BG"))
             lb_icon.place(x=24, y=10)
             self._tw_add(lb_icon, fg_color="TOPBAR_BG")
         except Exception:
             pass
 
         lbl_nome = CTkLabel(self.fr_topbar, text="Bruno Álex",
-                            text_color=self.TOPBAR_TEXT,
+                            text_color=self._tm.c("TOPBAR_TEXT"),
                             font=("Segoe UI", 12, "bold"), height=12)
         lbl_nome.place(x=64, y=10)
         self._tw_add(lbl_nome, text_color="TOPBAR_TEXT", fg_color="TOPBAR_BG")
 
         lbl_nivel = CTkLabel(self.fr_topbar, text="Admin",
-                             text_color=self.TOPBAR_TEXT,
+                             text_color=self._tm.c("TOPBAR_TEXT"),
                              font=("Segoe UI", 12, "normal"), height=12)
         lbl_nivel.place(x=64, y=28)
         self._tw_add(lbl_nivel, text_color="TOPBAR_TEXT", fg_color="TOPBAR_BG")
 
-        # Botão de tema
         self._theme_btn = CTkButton(
             self.fr_topbar,
             text=self._theme_icon(),
@@ -205,8 +200,6 @@ class FormWindow(CTkToplevel):
             command=self._toggle_theme,
         )
         self._theme_btn.place(relx=1.0, x=-48, y=12)
-
-    # ── TabView ──────────────────────────────────────────────────────────────
 
     def _build_tabview(self):
         self.tbv_cadastros = CTkTabview(
@@ -233,12 +226,9 @@ class FormWindow(CTkToplevel):
         self.tab_cadastro_paciente = self.tbv_cadastros.add("Cadastro de Pacientes")
         self.tab_cadastro_medicos  = self.tbv_cadastros.add("Cadastro de Médicos")
 
-    # ── Aba Pacientes ─────────────────────────────────────────────────────────
-
     def cadastro_paciente(self):
         fr = self._section_frame(self.tab_cadastro_paciente)
 
-        # GERAL
         self._label(fr, "GERAL", 14, bold=True, x=16, y=18)
         self._label(fr, "Nome completo", x=16, y=46)
         self.ent_nome_paciente_cadastro = self._entry(fr, 381, x=16, y=72)
@@ -258,7 +248,6 @@ class FormWindow(CTkToplevel):
              "Agênero", "Gênero fluido", "Não declarado"],
             x=913, y=72)
 
-        # ENDEREÇO
         self._label(fr, "ENDEREÇO", 14, bold=True, x=16, y=124)
         self._label(fr, "CEP", x=16, y=148)
         self.ent_cep_paciente_cadastro = self._entry(fr, 200, x=16, y=176)
@@ -275,7 +264,6 @@ class FormWindow(CTkToplevel):
         self._label(fr, "Estado", x=778, y=212)
         self.ent_estado_paciente_cadastro = self._entry(fr, 320, x=778, y=238)
 
-        # CONTATOS
         self._label(fr, "CONTATOS", 14, bold=True, x=16, y=292)
         self._label(fr, "E-Mail", x=16, y=316)
         self.ent_email_paciente_cadastro = self._entry(fr, 341, x=16, y=342)
@@ -301,12 +289,9 @@ class FormWindow(CTkToplevel):
             limpar_cmd=self.limpar_cadastro_paciente,
         )
 
-    # ── Aba Médicos ───────────────────────────────────────────────────────────
-
     def cadastro_medico(self):
         fr = self._section_frame(self.tab_cadastro_medicos)
 
-        # GERAL
         self._label(fr, "GERAL", 14, bold=True, x=16, y=18)
         self._label(fr, "Código", x=16, y=46)
         self.ent_codigo_paciente_cadastro = self._entry(
@@ -359,7 +344,6 @@ class FormWindow(CTkToplevel):
             fr, 210, placeholder="dd/mm/aaaa", x=847, y=134)
         self._cal_button(fr, self.pop_calendario, x=1063, y=134)
 
-        # ENDEREÇO
         self._label(fr, "ENDEREÇO", 14, bold=True, x=16, y=186)
         self._label(fr, "CEP", x=16, y=208)
         self.ent_cep_medico_cadastro = self._entry(fr, 141, x=16, y=232)
@@ -380,7 +364,6 @@ class FormWindow(CTkToplevel):
         self.cb_estado_paciente_cadastro = self._combo(
             fr, 95, self._ufs(), x=1006, y=232)
 
-        # CONTATOS
         self._label(fr, "CONTATOS", 14, bold=True, x=16, y=292)
         self._label(fr, "E-Mail", x=16, y=316)
         self.ent_email_medico_cadastro = self._entry(fr, 341, x=16, y=342)
@@ -406,8 +389,6 @@ class FormWindow(CTkToplevel):
             limpar_cmd=self.limpar_cadastro_medico,
         )
 
-    # ── Callback de tema ──────────────────────────────────────────────────────
-
     def _theme_icon(self) -> str:
         return "☀️" if self._tm.is_dark else "🌙"
 
@@ -424,7 +405,7 @@ class FormWindow(CTkToplevel):
                 kwargs = {param: colors[ck] for param, ck in keys.items()}
                 widget.configure(**kwargs)
             except Exception as e:
-                print(f"[CadastroWindow] erro ao reconfigurar {widget}: {e}")
+                pass
 
         self._theme_btn.configure(
             text=self._theme_icon(),
@@ -433,15 +414,11 @@ class FormWindow(CTkToplevel):
             text_color=colors["TOPBAR_TEXT"],
         )
 
-    # ── Utilidades ────────────────────────────────────────────────────────────
-
     @staticmethod
     def _ufs():
         return ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
                 "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
                 "RS","RO","RR","SC","SP","SE","TO"]
-
-    # ── Limpar ────────────────────────────────────────────────────────────────
 
     def limpar_cadastro_paciente(self):
         for w in [
@@ -478,8 +455,6 @@ class FormWindow(CTkToplevel):
             self.ent_obsevacao_celular_medico_cadastro,
         ]:
             w.delete(0, END)
-
-    # ── Calendário ────────────────────────────────────────────────────────────
 
     def pop_calendario(self):
         colors = self._tm.colors

@@ -10,7 +10,7 @@ def _only_digits(s):
     return re.sub(r"\D", "", str(s))
 
 
-class SearchPacientView(ctk.CTkFrame):
+class PacientView(ctk.CTkFrame):
     COLUMNS = ("ID", "Nome", "CPF", "Nascimento", "Sexo", "Cidade")
     COL_WIDTHS = (40, 230, 130, 110, 110, 150)
 

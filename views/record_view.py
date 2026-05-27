@@ -5,7 +5,7 @@ from datetime import datetime
 from theme_manager import ThemeManager
 from config import DB_PATH
 
-class RecordWindow(ctk.CTkFrame):
+class RecordView(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="transparent")
 

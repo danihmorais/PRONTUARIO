@@ -90,20 +90,20 @@ class DevRunner(ctk.CTk):
         app.mainloop()
 
     def run_form(self):
-        from views.form_window import FormWindow
+        from views.form_view import FormWindow
         self.launch_view(FormWindow)
 
     def run_appointment(self):
-        from views.appointment_window import AppointmentWindow
+        from views.appointment_view import AppointmentWindow
         self.launch_view(AppointmentWindow)
 
-    def run_search_doctor(self):
-        from views.search_doctor_window import SearchDoctorView
-        self.launch_view(SearchDoctorView, needs_controller=False)
+    def run_team_view(self):
+        from views.team_view import TeamView
+        self.launch_view(TeamView, needs_controller=False)
 
-    def run_search_pacient(self):
-        from views.search_pacient_window import SearchPacientView
-        self.launch_view(SearchPacientView, needs_controller=False)
+    def run_pacient_view(self):
+        from views.pacient_view import PacientView
+        self.launch_view(PacientView, needs_controller=False)
 
 if __name__ == "__main__":
     ctk.set_default_color_theme("blue")

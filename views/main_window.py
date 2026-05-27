@@ -6,14 +6,15 @@ from typing import List
 import customtkinter as ctk
 from PIL import Image
 
-import views.search_pacient_window as spw
-import views.search_doctor_window  as sdw
-from views.form_window        import FormWindow
-from views.appointment_window import AppointmentWindow
-from views.record_window      import RecordWindow
-from views.export_window      import ExportView
-from views.config_window      import ConfigView
+import views.pacient_view as spw
+import views.team_view  as sdw
+from views.form_view        import FormView
+from views.appointment_view import AppointmentView
+from views.record_view      import RecordView
+from views.export_view      import ExportView
+from views.config_view      import ConfigView
 from views.components.theme_switch import ThemeSwitch
+from views.components.appointments import Appointments
 
 from config        import BASE_DIR, DB_PATH
 from theme_manager import ThemeManager
@@ -78,11 +79,11 @@ class MainWindow(ctk.CTk):
 
         self._views: dict[str, ctk.CTkFrame] = {
             "dashboard":      self._build_dashboard(),
-            "form":           FormWindow(self._content, self.controller),
-            "appointment":    AppointmentWindow(self._content, self.controller),
-            "record":         RecordWindow(self._content, self.controller),
-            "search_pacient": spw.SearchPacientView(self._content),
-            "search_doctor":  sdw.SearchDoctorView(self._content),
+            "form":           FormView(self._content, self.controller),
+            "appointment":    AppointmentView(self._content, self.controller),
+            "record":         RecordView(self._content, self.controller),
+            "pacient":        spw.PacientView(self._content),
+            "team":           sdw.TeamView(self._content),
             "export":         ExportView(self._content),
             "config":         ConfigView(self._content),
         }
@@ -143,8 +144,8 @@ class MainWindow(ctk.CTk):
         self._bt_consultas     = self._nav_btn("  Consultas",        "calendar-search.png", "appointment")
         self._bt_prontuario    = self._nav_btn("  Prontuário",       "clipboard.png",       "record")
         self._bt_cadastro      = self._nav_btn("  Cadastros",        "personalcard.png",    "form")
-        self._bt_pacientes     = self._nav_btn("  Pacientes",        "people.png",          "search_pacient")
-        self._bt_fisioterapeutas = self._nav_btn("  Equipe",         "personalcard.png",    "search_doctor")
+        self._bt_pacientes     = self._nav_btn("  Pacientes",        "people.png",          "pacient")
+        self._bt_fisioterapeutas = self._nav_btn("  Equipe",         "personalcard.png",    "team")
 
         div2 = ctk.CTkFrame(self._sidebar, height=1, fg_color=self._tm.c("GRAY_LIGHT"))
         div2.pack(fill="x", padx=16, pady=(8, 0))
@@ -159,8 +160,8 @@ class MainWindow(ctk.CTk):
             "appointment":    self._bt_consultas,
             "record":         self._bt_prontuario,
             "form":           self._bt_cadastro,
-            "search_pacient": self._bt_pacientes,
-            "search_doctor":  self._bt_fisioterapeutas,
+            "pacient": self._bt_pacientes,
+            "team":  self._bt_fisioterapeutas,
             "export":         self._bt_exportar,
             "config":         self._bt_config,
         }
@@ -253,8 +254,8 @@ class MainWindow(ctk.CTk):
         "form":           " Cadastros",
         "appointment":    " Consultas",
         "record":         " Prontuário",
-        "search_pacient": " Pacientes",
-        "search_doctor":  " Equipe",
+        "pacient":        " Pacientes",
+        "team":           " Equipe",
         "export":         " Exportar Dados",
         "config":         " Configurações",
     }
@@ -430,7 +431,7 @@ class MainWindow(ctk.CTk):
         self._tw(panel_c, fg_color="WHITE", border_color="GRAY_LIGHT")
 
         ph = ctk.CTkFrame(panel_c, fg_color="transparent")
-        ph.grid(row=0, column=0, sticky="ew", padx=20, pady=(16, 8))
+        ph.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 20))
         ph.grid_columnconfigure(0, weight=1)
 
         lbl_pc = ctk.CTkLabel(
@@ -453,71 +454,14 @@ class MainWindow(ctk.CTk):
         btn_ver_todas.grid(row=0, column=1, sticky="e")
         self._tw(btn_ver_todas, fg_color="BLUE_XL", hover_color="GRAY_LIGHT", text_color="BLUE")
 
-        col_hdr = ctk.CTkFrame(
-            panel_c, fg_color=self._tm.c("BLUE_XL"), corner_radius=6
-        )
-        col_hdr.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 4))
-        self._tw(col_hdr, fg_color="BLUE_XL")
-
-        for txt, w in [("Paciente", 190), ("Fisioterapeuta", 160),
-                       ("Data", 90), ("Hora", 70), ("Status", 110)]:
-            lbl_col = ctk.CTkLabel(
-                col_hdr, text=txt, width=w, anchor="w",
-                font=(self._tm.font, 11, "bold"),
-                text_color=self._tm.c("DARK_BLUE"),
-            )
-            lbl_col.pack(side="left", padx=6, pady=5)
-            self._tw(lbl_col, text_color="DARK_BLUE")
-
-        scroll_c = ctk.CTkScrollableFrame(
+        appointments = Appointments(
             panel_c,
-            fg_color="transparent",
-            corner_radius=0,
-            height=260,
+            self._tm,
+            consultas_proximas
         )
-        scroll_c.grid(row=2, column=0, sticky="ew", padx=(20, 6), pady=(0, 8))
-        panel_c.grid_rowconfigure(2, weight=0)
+        appointments.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 16))
 
-        if not consultas_proximas:
-            lbl_empty_c = ctk.CTkLabel(
-                scroll_c,
-                text="Nenhuma consulta pendente.",
-                font=(self._tm.font, 13),
-                text_color=self._tm.c("GRAY"),
-            )
-            lbl_empty_c.pack(pady=20)
-            self._tw(lbl_empty_c, text_color="GRAY")
-        else:
-            for idx, (pac, fisio, data, hora, status) in enumerate(consultas_proximas):
-                bg_key = "WHITE" if idx % 2 == 0 else "GRAY_BG"
-                row = ctk.CTkFrame(scroll_c, fg_color=self._tm.c(bg_key), corner_radius=4)
-                row.pack(fill="x", pady=1)
-                self._tw(row, fg_color=bg_key)
-
-                lbl_p = ctk.CTkLabel(row, text=pac, width=190, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("BLACK"))
-                lbl_p.pack(side="left", padx=6)
-                self._tw(lbl_p, text_color="BLACK")
-
-                lbl_f = ctk.CTkLabel(row, text=fisio, width=160, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
-                lbl_f.pack(side="left")
-                self._tw(lbl_f, text_color="GRAY_DARK")
-
-                lbl_d = ctk.CTkLabel(row, text=data, width=90, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
-                lbl_d.pack(side="left")
-                self._tw(lbl_d, text_color="GRAY_DARK")
-
-                lbl_h = ctk.CTkLabel(row, text=hora, width=70, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
-                lbl_h.pack(side="left")
-                self._tw(lbl_h, text_color="GRAY_DARK")
-
-                sbg_key, stc_key = _STATUS_THEME_MAP.get(status, ("GRAY_LIGHT", "GRAY_DARK"))
-                lbl_st = ctk.CTkLabel(
-                    row, text=status, width=110,
-                    corner_radius=12, fg_color=self._tm.c(sbg_key), text_color=self._tm.c(stc_key),
-                    font=(self._tm.font, 11, "bold"),
-                )
-                lbl_st.pack(side="left", padx=4, pady=3)
-                self._tw(lbl_st, fg_color=sbg_key, text_color=stc_key)
+        panel_c.grid_rowconfigure(1, weight=1)
 
         panel_p = ctk.CTkFrame(
             bottom,

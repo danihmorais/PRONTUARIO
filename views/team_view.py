@@ -10,7 +10,7 @@ def _only_digits(s):
     return re.sub(r"\D", "", str(s))
 
 
-class SearchDoctorView(ctk.CTkFrame):
+class TeamView(ctk.CTkFrame):
 
     _COLS_FISIO = {
         "headers": ["ID", "Nome", "CREFITO", "Especialidade", "Celular"],

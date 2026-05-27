@@ -88,7 +88,7 @@ def _bind_mask(entry: ctk.CTkEntry, fmt_fn):
     entry.bind("<KeyRelease>", _on_key)
 
 
-class FormWindow(ctk.CTkFrame):
+class FormView(ctk.CTkFrame):
 
     def __init__(self, parent, controller=None, usuario=None):
         super().__init__(parent, fg_color="transparent")

@@ -3,9 +3,14 @@ import customtkinter as ctk
 
 from tkinter import font
 from tkcalendar import Calendar
-
+import ctypes
 from config import BASE_DIR
 
+def get_dpi_scale():
+    try:
+        return ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
+    except Exception:
+        return 1.0
 
 class CalendarPopup:
     def __init__(self, parent, theme_manager):
@@ -115,15 +120,15 @@ class CalendarPopup:
     def _center_window(self):
         self.top.update_idletasks()
 
-        scale = ctk.get_window_scaling()
+        scale = get_dpi_scale()
 
         width = int(380 * scale)
-        height = 280
+        height = int(280 * scale)
 
         screen_w = self.top.winfo_screenwidth()
         screen_h = self.top.winfo_screenheight()
 
-        x = int((screen_w - width) / 2)
-        y = int((screen_h - height) / 2)
+        x = int(((screen_w - width)  // 2) * scale)
+        y = (screen_h - height) // 2
 
         self.top.geometry(f"{width}x{height}+{x}+{y}")

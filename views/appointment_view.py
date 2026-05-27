@@ -6,6 +6,7 @@ from tkinter import messagebox
 from theme_manager import ThemeManager
 from config import DB_PATH
 from views.components.calendar import CalendarPopup
+from views.components.appointments import Appointments
 
 _STATUS_THEME_MAP = {
     "Confirmada": ("SUCCESS_BG", "SUCCESS"),
@@ -14,17 +15,7 @@ _STATUS_THEME_MAP = {
     "Realizada": ("PURPLE_BG", "PURPLE"),
 }
 
-
-def _get_status_colors(self, status):
-    bg_key, text_key = _STATUS_THEME_MAP.get(
-        status,
-        ("GRAY_LIGHT", "GRAY_DARK")
-    )
-
-    return self._tm.c(bg_key), self._tm.c(text_key)
-
-
-class AppointmentWindow(ctk.CTkFrame):
+class AppointmentView(ctk.CTkFrame):
 
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="transparent")
@@ -121,7 +112,6 @@ class AppointmentWindow(ctk.CTkFrame):
             row=row,
             column=col,
             sticky="w",
-            padx=10
         )
 
         self._tw(lbl, text_color="GRAY_DARK")
@@ -166,7 +156,6 @@ class AppointmentWindow(ctk.CTkFrame):
             column=col,
             columnspan=colspan,
             sticky="ew",
-            padx=10,
             pady=(0, 12)
         )
 
@@ -190,7 +179,7 @@ class AppointmentWindow(ctk.CTkFrame):
 
     def _build_form(self):
         form = ctk.CTkFrame(self.container, fg_color="transparent")
-        form.pack(fill="x", padx=20, pady=20)
+        form.pack(fill="x", padx=10, pady=20)
 
         form.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
@@ -207,7 +196,6 @@ class AppointmentWindow(ctk.CTkFrame):
             row=3,
             column=0,
             sticky="ew",
-            padx=10,
             pady=(0, 12)
         )
 
@@ -274,7 +262,6 @@ class AppointmentWindow(ctk.CTkFrame):
             row=3,
             column=3,
             sticky="ew",
-            padx=10,
             pady=(0, 12)
         )
 
@@ -290,7 +277,6 @@ class AppointmentWindow(ctk.CTkFrame):
             column=0,
             columnspan=4,
             sticky="ew",
-            padx=10,
             pady=(0, 12)
         )
 
@@ -301,7 +287,6 @@ class AppointmentWindow(ctk.CTkFrame):
 
         btn_frame.pack(
             fill="x",
-            padx=20,
             pady=(0, 10)
         )
 
@@ -316,7 +301,7 @@ class AppointmentWindow(ctk.CTkFrame):
             command=self.agendar,
         )
 
-        btn_agendar.pack(side="right")
+        btn_agendar.pack(side="right", padx=10)
 
         self._tw(
             btn_agendar,
@@ -353,7 +338,7 @@ class AppointmentWindow(ctk.CTkFrame):
 
         lf.pack(
             fill="x",
-            padx=20,
+            padx=10,
             pady=(10, 0)
         )
 
@@ -361,15 +346,25 @@ class AppointmentWindow(ctk.CTkFrame):
             lf,
             text="Consultas Agendadas",
             font=(self._tm.font, 16, "bold"),
-            text_color=self._tm.c("BLACK"),
+            text_color=self._tm.c("BLACK"), 
         )
 
         lbl_title.pack(side="left")
 
         self._tw(lbl_title, text_color="BLACK")
 
+        right_box = ctk.CTkFrame(lf, fg_color="transparent")
+        right_box.pack(side="right", padx=(0, 5))
+        lbl_filter = ctk.CTkLabel(
+            right_box,
+            text="Filtrar:",
+            text_color=self._tm.c("GRAY"),
+            font=(self._tm.font, 12)
+        )
+        right_box.pack(side="right", padx=(0, 0))
+
         self.cb_filtro = ctk.CTkComboBox(
-            lf,
+            right_box,
             values=[
                 "Todas",
                 "Pendente",
@@ -390,320 +385,59 @@ class AppointmentWindow(ctk.CTkFrame):
         )
 
         self.cb_filtro.set("Todas")
-        self.cb_filtro.pack(side="right")
-
-        self._tw(
-            self.cb_filtro,
-            fg_color="GRAY_BG",
-            border_color="GRAY_LIGHT",
-            dropdown_fg_color="WHITE",
-            dropdown_text_color="BLACK",
-            button_color="BLUE",
-            button_hover_color="DARK_BLUE",
-            text_color="BLACK"
-        )
-
-        lbl_filter = ctk.CTkLabel(
-            lf,
-            text="Filtrar:",
-            text_color=self._tm.c("GRAY"),
-            font=(self._tm.font, 12)
-        )
-
-        lbl_filter.pack(side="right", padx=(0, 4))
+        self.cb_filtro.pack(side="left", padx = (0, 0))
 
         self._tw(lbl_filter, text_color="GRAY")
 
-        hdr = ctk.CTkFrame(
+        self.appointments = Appointments(
             self.container,
-            fg_color=self._tm.c("BLUE_XL"),
-            corner_radius=6
+            self._tm,
+            data=[],
+            on_confirm=self._mudar_status_confirmar,
+            on_cancel=self._mudar_status_cancelar,
+            on_delete=self._excluir
         )
 
-        hdr.pack(fill="x", padx=20, pady=(8, 2))
-
-        self._tw(hdr, fg_color="BLUE_XL")
-
-        for txt, w in [
-            ("Paciente", 200),
-            ("Fisioterapeuta", 180),
-            ("Data", 100),
-            ("Hora", 70),
-            ("Status", 110),
-            ("Ações", 140)
-        ]:
-            lbl = ctk.CTkLabel(
-                hdr,
-                text=txt,
-                width=w,
-                anchor="w",
-                font=(self._tm.font, 12, "bold"),
-                text_color=self._tm.c("DARK_BLUE")
-            )
-
-            lbl.pack(side="left", padx=6, pady=6)
-
-            self._tw(lbl, text_color="DARK_BLUE")
-
-        self.tabela_consultas = ctk.CTkScrollableFrame(
-            self.container,
-            fg_color=self._tm.c("GRAY_BG"),
-            corner_radius=8,
-            height=280,
-        )
-
-        self.tabela_consultas.pack(
-            fill="x",
-            padx=20,
-            pady=(0, 20)
-        )
-
-        self._tw(
-            self.tabela_consultas,
-            fg_color="GRAY_BG"
-        )
+        self.appointments.pack(fill="x", padx=10, pady=(10, 10))
 
     def carregar_dados(self):
         try:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
 
-            cur.execute(
-                "SELECT id, nome FROM pacientes ORDER BY nome"
-            )
-
+            # pacientes
+            cur.execute("SELECT id, nome FROM pacientes ORDER BY nome")
             self.pacientes_list = cur.fetchall()
 
             self.cb_paciente.configure(
-                values=[
-                    f"{p[0]} — {p[1]}"
-                    for p in self.pacientes_list
-                ]
+                values=[f"{p[0]} — {p[1]}" for p in self.pacientes_list]
             )
 
-            cur.execute(
-                "SELECT id, nome FROM fisioterapeutas ORDER BY nome"
-            )
-
+            # fisioterapeutas
+            cur.execute("SELECT id, nome FROM fisioterapeutas ORDER BY nome")
             self.fisios_list = cur.fetchall()
 
             self.cb_fisio.configure(
-                values=[
-                    f"{f[0]} — {f[1]}"
-                    for f in self.fisios_list
-                ]
+                values=[f"{f[0]} — {f[1]}" for f in self.fisios_list]
             )
 
-            self._render_tabela(cur)
+            # CONSULTAS (FALTAVA ISSO)
+            cur.execute("""
+                SELECT c.id, p.nome, f.nome,
+                    c.data_consulta, c.horario, c.status
+                FROM consultas c
+                JOIN pacientes p ON c.id_paciente = p.id
+                JOIN fisioterapeutas f ON c.id_fisioterapeuta = f.id
+                ORDER BY c.data_consulta DESC, c.horario DESC
+            """)
+
+            rows = cur.fetchall()
+            self.appointments.update_data(rows)
 
             conn.close()
 
         except Exception as e:
             messagebox.showerror("Erro", str(e))
-
-    def _render_tabela(self, cursor):
-        for w in self.tabela_consultas.winfo_children():
-            w.destroy()
-
-        filtro = self.cb_filtro.get()
-
-        query = """
-            SELECT c.id, p.nome, f.nome,
-                   c.data_consulta, c.horario, c.status
-            FROM consultas c
-            JOIN pacientes p
-                ON c.id_paciente = p.id
-            JOIN fisioterapeutas f
-                ON c.id_fisioterapeuta = f.id
-        """
-
-        params = ()
-
-        if filtro != "Todas":
-            query += " WHERE c.status = ?"
-            params = (filtro,)
-
-        query += """
-            ORDER BY
-                c.data_consulta DESC,
-                c.horario DESC
-        """
-
-        cursor.execute(query, params)
-
-        rows = cursor.fetchall()
-
-        if not rows:
-            lbl_empty = ctk.CTkLabel(
-                self.tabela_consultas,
-                text="Nenhuma consulta encontrada.",
-                font=(self._tm.font, 13),
-                text_color=self._tm.c("GRAY"),
-            )
-
-            lbl_empty.pack(pady=20)
-
-            self._tw(lbl_empty, text_color="GRAY")
-
-            return
-
-        for idx, (cid, pac, fisio, data, hora, status) in enumerate(rows):
-            bg_key = "WHITE" if idx % 2 == 0 else "GRAY_BG"
-
-            row = ctk.CTkFrame(
-                self.tabela_consultas,
-                fg_color=self._tm.c(bg_key),
-                corner_radius=4
-            )
-
-            row.pack(fill="x", padx=4, pady=2)
-
-            self._tw(row, fg_color=bg_key)
-
-            lbl_p = ctk.CTkLabel(
-                row,
-                text=pac,
-                width=200,
-                anchor="w",
-                font=(self._tm.font, 12),
-                text_color=self._tm.c("BLACK")
-            )
-
-            lbl_p.pack(side="left", padx=6)
-
-            self._tw(lbl_p, text_color="BLACK")
-
-            lbl_f = ctk.CTkLabel(
-                row,
-                text=fisio,
-                width=180,
-                anchor="w",
-                font=(self._tm.font, 12),
-                text_color=self._tm.c("BLACK")
-            )
-
-            lbl_f.pack(side="left")
-
-            self._tw(lbl_f, text_color="BLACK")
-
-            lbl_d = ctk.CTkLabel(
-                row,
-                text=data,
-                width=100,
-                anchor="w",
-                font=(self._tm.font, 12),
-                text_color=self._tm.c("GRAY_DARK")
-            )
-
-            lbl_d.pack(side="left")
-
-            self._tw(lbl_d, text_color="GRAY_DARK")
-
-            lbl_h = ctk.CTkLabel(
-                row,
-                text=hora,
-                width=70,
-                anchor="w",
-                font=(self._tm.font, 12),
-                text_color=self._tm.c("GRAY_DARK")
-            )
-
-            lbl_h.pack(side="left")
-
-            self._tw(lbl_h, text_color="GRAY_DARK")
-
-            sbg_key, stc_key = _STATUS_THEME_MAP.get(
-                status,
-                ("GRAY_LIGHT", "GRAY_DARK")
-            )
-
-            lbl_status = ctk.CTkLabel(
-                row,
-                text=status,
-                width=110,
-                corner_radius=12,
-                fg_color=self._tm.c(sbg_key),
-                text_color=self._tm.c(stc_key),
-                font=(self._tm.font, 11, "bold")
-            )
-
-            lbl_status.pack(side="left", padx=4)
-
-            self._tw(
-                lbl_status,
-                fg_color=sbg_key,
-                text_color=stc_key
-            )
-
-            acao_frame = ctk.CTkFrame(
-                row,
-                fg_color="transparent"
-            )
-
-            acao_frame.pack(side="right", padx=6)
-
-            btn_ok = ctk.CTkButton(
-                acao_frame,
-                text="✔",
-                width=32,
-                height=28,
-                fg_color=self._tm.c("SUCCESS_BG"),
-                hover_color=self._tm.c("SUCCESS_BG"),
-                text_color=self._tm.c("SUCCESS"),
-                font=(self._tm.font, 13, "bold"),
-                command=lambda i=cid: self._mudar_status(i, "Confirmada"),
-            )
-
-            btn_ok.pack(side="left", padx=2)
-
-            self._tw(
-                btn_ok,
-                fg_color="SUCCESS_BG",
-                hover_color="SUCCESS_BG",
-                text_color="SUCCESS"
-            )
-
-            btn_cancel = ctk.CTkButton(
-                acao_frame,
-                text="✘",
-                width=32,
-                height=28,
-                fg_color=self._tm.c("RED_LIGHT"),
-                hover_color=self._tm.c("RED_LIGHT"),
-                text_color=self._tm.c("RED"),
-                font=(self._tm.font, 13, "bold"),
-                command=lambda i=cid: self._mudar_status(i, "Cancelada"),
-            )
-
-            btn_cancel.pack(side="left", padx=2)
-
-            self._tw(
-                btn_cancel,
-                fg_color="RED_LIGHT",
-                hover_color="RED_LIGHT",
-                text_color="RED"
-            )
-
-            btn_delete = ctk.CTkButton(
-                acao_frame,
-                text="🗑",
-                width=32,
-                height=28,
-                fg_color=self._tm.c("GRAY_LIGHT"),
-                hover_color=self._tm.c("GRAY"),
-                text_color=self._tm.c("GRAY_DARK"),
-                font=(self._tm.font, 13),
-                command=lambda i=cid, n=pac: self._excluir(i, n),
-            )
-
-            btn_delete.pack(side="left", padx=2)
-
-            self._tw(
-                btn_delete,
-                fg_color="GRAY_LIGHT",
-                hover_color="GRAY",
-                text_color="GRAY_DARK"
-            )
 
     def agendar(self):
         pac_str = self.cb_paciente.get().strip()
@@ -788,7 +522,7 @@ class AppointmentWindow(ctk.CTkFrame):
 
             conn.commit()
 
-            self._render_tabela(cur)
+            self.carregar_dados()
 
             conn.close()
 
@@ -814,7 +548,7 @@ class AppointmentWindow(ctk.CTkFrame):
 
             conn.commit()
 
-            self._render_tabela(cur)
+            self.carregar_dados()
 
             conn.close()
 
@@ -854,3 +588,9 @@ class AppointmentWindow(ctk.CTkFrame):
 
         self.cb_paciente.set("")
         self.cb_fisio.set("")
+    
+    def _mudar_status_confirmar(self, cid):
+        self._mudar_status(cid, "Confirmada")
+
+    def _mudar_status_cancelar(self, cid):
+        self._mudar_status(cid, "Cancelada")

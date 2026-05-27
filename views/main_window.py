@@ -386,12 +386,11 @@ class MainWindow(ctk.CTk):
             card.grid(
                 row=0, column=i, sticky="nsew",
                 padx=(0 if i == 0 else 10, 0),
-                ipadx=6, ipady=6,
             )
             self._tw(card, fg_color="WHITE", border_color="GRAY_LIGHT")
 
             top = ctk.CTkFrame(card, fg_color="transparent")
-            top.pack(fill="x", padx=16, pady=(14, 4))
+            top.pack(fill="x", padx=16, pady=(10, 2))
 
             lbl_l = ctk.CTkLabel(
                 top, text=label,
@@ -409,7 +408,7 @@ class MainWindow(ctk.CTk):
                 text_color=self._tm.c("BLACK"),
                 font=(self._tm.font, 32, "bold"),
             )
-            lbl_v.pack(anchor="w", padx=16, pady=(0, 14))
+            lbl_v.pack(anchor="w", padx=16, pady=(0, 10))
             self._tw(lbl_v, text_color="BLACK")
 
         bottom = ctk.CTkFrame(dash, fg_color="transparent")
@@ -471,10 +470,13 @@ class MainWindow(ctk.CTk):
             self._tw(lbl_col, text_color="DARK_BLUE")
 
         scroll_c = ctk.CTkScrollableFrame(
-            panel_c, fg_color="transparent", corner_radius=0
+            panel_c,
+            fg_color="transparent",
+            corner_radius=0,
+            height=260,
         )
-        scroll_c.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 16))
-        panel_c.grid_rowconfigure(2, weight=1)
+        scroll_c.grid(row=2, column=0, sticky="ew", padx=(20, 6), pady=(0, 8))
+        panel_c.grid_rowconfigure(2, weight=0)
 
         if not consultas_proximas:
             lbl_empty_c = ctk.CTkLabel(

@@ -164,7 +164,10 @@ class LoginWindow(ctk.CTk):
 
     def _on_theme_change(self, colors: dict):
         self.configure(fg_color=colors["WHITE"])
-        self.lb_image.configure(fg_color=colors["WHITE"])
+        
+        if hasattr(self, 'bg_img'):
+            self.lb_image.configure(fg_color=colors["WHITE"])
+            
         self.lb_logo.configure(fg_color=colors["WHITE"])
         self.fr_login.configure(fg_color=colors["BLUE_XL"])
         self.titulo.configure(text_color=colors["BLACK"])
@@ -172,19 +175,20 @@ class LoginWindow(ctk.CTk):
         self.lb_usuario.configure(text_color=colors["BLACK"], fg_color=colors["BLUE_XL"])
         self.lb_senha.configure(text_color=colors["BLACK"], fg_color=colors["BLUE_XL"])
         self.subtitulo_rodape.configure(text_color=colors["GRAY"], fg_color=colors["BLUE_XL"])
+        
         self.entry_usuario.configure(
             fg_color=colors["WHITE"], text_color=colors["BLACK"],
-            border_color=colors["DARK_BLUE"],
+            border_color=colors["DARK_BLUE"], placeholder_text_color=colors["GRAY"] # <--- Placeholder rastreado
         )
         self.entry_senha.configure(
             fg_color=colors["WHITE"], text_color=colors["BLACK"],
-            border_color=colors["DARK_BLUE"],
+            border_color=colors["DARK_BLUE"], placeholder_text_color=colors["GRAY"] # <--- Placeholder rastreado
         )
         self.bt_entrar.configure(
             fg_color=colors["BLUE"], hover_color=colors["DARK_BLUE"],
             text_color=colors["TOPBAR_TEXT"],
         )
-        self.lb_feedback.configure(fg_color=colors["BLUE_XL"])
+        self.lb_feedback.configure(fg_color=colors["BLUE_XL"], text_color=colors["RED"])
 
     def login(self):
         usuario = self.entry_usuario.get().strip()

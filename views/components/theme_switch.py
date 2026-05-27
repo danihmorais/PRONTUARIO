@@ -34,25 +34,17 @@ class ThemeSwitch(ctk.CTkButton):
 
         super().__init__(
             parent,
-
             text="",
-
             image=self._icon(),
-
             width=42,
             height=42,
-
             corner_radius=12,
-
             fg_color=self._tm.c("WHITE"),
             hover_color=self._tm.c("BLUE_XL"),
-            bg_color=self._tm.c("WHITE"),
-
+            bg_color="transparent",
             border_width=1,
             border_color=self._tm.c("GRAY_LIGHT"),
-
             command=self._toggle,
-
             **kwargs
         )
 

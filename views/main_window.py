@@ -29,17 +29,11 @@ def _load_icon(path: str, size=(18, 18)) -> ctk.CTkImage | None:
     except Exception:
         return None
 
-_STATUS_BG = {
-    "Confirmada": "#D1FAE5",
-    "Pendente":   "#FEF3C7",
-    "Cancelada":  "#FEE2E2",
-    "Realizada":  "#EDE9FE",
-}
-_STATUS_TC = {
-    "Confirmada": "#065F46",
-    "Pendente":   "#92400E",
-    "Cancelada":  "#991B1B",
-    "Realizada":  "#5B21B6",
+_STATUS_THEME_MAP = {
+    "Confirmada": ("SUCCESS_BG", "SUCCESS"),
+    "Pendente":   ("WARN_BG", "WARN"),
+    "Cancelada":  ("RED_LIGHT", "RED"),
+    "Realizada":  ("PURPLE_BG", "PURPLE"),
 }
 
 class MainWindow(ctk.CTk):
@@ -275,6 +269,9 @@ class MainWindow(ctk.CTk):
 
         if view_key == "dashboard":
             self._views["dashboard"].destroy()
+            
+            self._themed_widgets = [entry for entry in self._themed_widgets if entry["widget"].winfo_exists()]
+            
             self._views["dashboard"] = self._build_dashboard()
             self._views["dashboard"].grid(row=0, column=0, sticky="nsew")
 
@@ -445,7 +442,7 @@ class MainWindow(ctk.CTk):
         lbl_pc.grid(row=0, column=0, sticky="w")
         self._tw(lbl_pc, text_color="BLACK")
 
-        ctk.CTkButton(
+        btn_ver_todas = ctk.CTkButton(
             ph, text="Ver todas →",
             width=100, height=28,
             fg_color=self._tm.c("BLUE_XL"),
@@ -453,7 +450,9 @@ class MainWindow(ctk.CTk):
             text_color=self._tm.c("BLUE"),
             font=(self._tm.font, 12),
             command=lambda: self.show_view("appointment"),
-        ).grid(row=0, column=1, sticky="e")
+        )
+        btn_ver_todas.grid(row=0, column=1, sticky="e")
+        self._tw(btn_ver_todas, fg_color="BLUE_XL", hover_color="GRAY_LIGHT", text_color="BLUE")
 
         col_hdr = ctk.CTkFrame(
             panel_c, fg_color=self._tm.c("BLUE_XL"), corner_radius=6
@@ -463,11 +462,13 @@ class MainWindow(ctk.CTk):
 
         for txt, w in [("Paciente", 190), ("Fisioterapeuta", 160),
                        ("Data", 90), ("Hora", 70), ("Status", 110)]:
-            ctk.CTkLabel(
+            lbl_col = ctk.CTkLabel(
                 col_hdr, text=txt, width=w, anchor="w",
                 font=(self._tm.font, 11, "bold"),
                 text_color=self._tm.c("DARK_BLUE"),
-            ).pack(side="left", padx=6, pady=5)
+            )
+            lbl_col.pack(side="left", padx=6, pady=5)
+            self._tw(lbl_col, text_color="DARK_BLUE")
 
         scroll_c = ctk.CTkScrollableFrame(
             panel_c, fg_color="transparent", corner_radius=0
@@ -476,38 +477,45 @@ class MainWindow(ctk.CTk):
         panel_c.grid_rowconfigure(2, weight=1)
 
         if not consultas_proximas:
-            ctk.CTkLabel(
+            lbl_empty_c = ctk.CTkLabel(
                 scroll_c,
                 text="Nenhuma consulta pendente.",
                 font=(self._tm.font, 13),
                 text_color=self._tm.c("GRAY"),
-            ).pack(pady=20)
+            )
+            lbl_empty_c.pack(pady=20)
+            self._tw(lbl_empty_c, text_color="GRAY")
         else:
             for idx, (pac, fisio, data, hora, status) in enumerate(consultas_proximas):
-                bg = self._tm.c("WHITE") if idx % 2 == 0 else self._tm.c("GRAY_BG")
-                row = ctk.CTkFrame(scroll_c, fg_color=bg, corner_radius=4)
+                bg_key = "WHITE" if idx % 2 == 0 else "GRAY_BG"
+                row = ctk.CTkFrame(scroll_c, fg_color=self._tm.c(bg_key), corner_radius=4)
                 row.pack(fill="x", pady=1)
+                self._tw(row, fg_color=bg_key)
 
-                ctk.CTkLabel(row, text=pac,   width=190, anchor="w",
-                             font=(self._tm.font, 12),
-                             text_color=self._tm.c("BLACK")).pack(side="left", padx=6)
-                ctk.CTkLabel(row, text=fisio, width=160, anchor="w",
-                             font=(self._tm.font, 12),
-                             text_color=self._tm.c("GRAY_DARK")).pack(side="left")
-                ctk.CTkLabel(row, text=data,  width=90,  anchor="w",
-                             font=(self._tm.font, 12),
-                             text_color=self._tm.c("GRAY_DARK")).pack(side="left")
-                ctk.CTkLabel(row, text=hora,  width=70,  anchor="w",
-                             font=(self._tm.font, 12),
-                             text_color=self._tm.c("GRAY_DARK")).pack(side="left")
+                lbl_p = ctk.CTkLabel(row, text=pac, width=190, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("BLACK"))
+                lbl_p.pack(side="left", padx=6)
+                self._tw(lbl_p, text_color="BLACK")
 
-                sbg = _STATUS_BG.get(status, "#E5E7EB")
-                stc = _STATUS_TC.get(status, "#374151")
-                ctk.CTkLabel(
+                lbl_f = ctk.CTkLabel(row, text=fisio, width=160, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
+                lbl_f.pack(side="left")
+                self._tw(lbl_f, text_color="GRAY_DARK")
+
+                lbl_d = ctk.CTkLabel(row, text=data, width=90, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
+                lbl_d.pack(side="left")
+                self._tw(lbl_d, text_color="GRAY_DARK")
+
+                lbl_h = ctk.CTkLabel(row, text=hora, width=70, anchor="w", font=(self._tm.font, 12), text_color=self._tm.c("GRAY_DARK"))
+                lbl_h.pack(side="left")
+                self._tw(lbl_h, text_color="GRAY_DARK")
+
+                sbg_key, stc_key = _STATUS_THEME_MAP.get(status, ("GRAY_LIGHT", "GRAY_DARK"))
+                lbl_st = ctk.CTkLabel(
                     row, text=status, width=110,
-                    corner_radius=12, fg_color=sbg, text_color=stc,
+                    corner_radius=12, fg_color=self._tm.c(sbg_key), text_color=self._tm.c(stc_key),
                     font=(self._tm.font, 11, "bold"),
-                ).pack(side="left", padx=4, pady=3)
+                )
+                lbl_st.pack(side="left", padx=4, pady=3)
+                self._tw(lbl_st, fg_color=sbg_key, text_color=stc_key)
 
         panel_p = ctk.CTkFrame(
             bottom,
@@ -531,7 +539,7 @@ class MainWindow(ctk.CTk):
         lbl_pp.pack(side="left")
         self._tw(lbl_pp, text_color="BLACK")
 
-        ctk.CTkButton(
+        btn_ver_todos_pac = ctk.CTkButton(
             pp_hdr, text="Ver todos →",
             width=90, height=28,
             fg_color=self._tm.c("BLUE_XL"),
@@ -539,15 +547,19 @@ class MainWindow(ctk.CTk):
             text_color=self._tm.c("BLUE"),
             font=(self._tm.font, 12),
             command=lambda: self.show_view("search_pacient"),
-        ).pack(side="right")
+        )
+        btn_ver_todos_pac.pack(side="right")
+        self._tw(btn_ver_todos_pac, fg_color="BLUE_XL", hover_color="GRAY_LIGHT", text_color="BLUE")
 
         if not pacientes_recentes:
-            ctk.CTkLabel(
+            lbl_empty_p = ctk.CTkLabel(
                 panel_p,
                 text="Nenhum paciente cadastrado.",
                 font=(self._tm.font, 13),
                 text_color=self._tm.c("GRAY"),
-            ).pack(pady=20, padx=16)
+            )
+            lbl_empty_p.pack(pady=20, padx=16)
+            self._tw(lbl_empty_p, text_color="GRAY")
         else:
             for pac in pacientes_recentes:
                 nome = pac[0]
@@ -561,15 +573,16 @@ class MainWindow(ctk.CTk):
                 )
                 avatar.pack(side="left")
                 avatar.pack_propagate(False)
+                self._tw(avatar, fg_color="BLUE")
 
-                initials = "".join(
-                    p[0].upper() for p in nome.split()[:2]
-                ) or "?"
-                ctk.CTkLabel(
+                initials = "".join(p[0].upper() for p in nome.split()[:2]) or "?"
+                lbl_av = ctk.CTkLabel(
                     avatar, text=initials,
-                    text_color="white",
+                    text_color=self._tm.c("WHITE"),
                     font=(self._tm.font, 11, "bold"),
-                ).place(relx=0.5, rely=0.5, anchor="center")
+                )
+                lbl_av.place(relx=0.5, rely=0.5, anchor="center")
+                self._tw(lbl_av, text_color="WHITE")
 
                 lbl_nome = ctk.CTkLabel(
                     item, text=nome,
@@ -578,7 +591,6 @@ class MainWindow(ctk.CTk):
                 )
                 lbl_nome.pack(side="left", padx=10)
                 self._tw(lbl_nome, text_color="BLACK")
-
         return dash
 
     def _tw(self, widget, **color_keys):

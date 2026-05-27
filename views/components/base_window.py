@@ -22,15 +22,30 @@ class BaseWindow(ctk.CTkFrame):
 
     def _entry(self, parent, width, placeholder="", x=0, y=0, disabled=False):
         state = "disabled" if disabled else "normal"
-        ent = ctk.CTkEntry(parent, width=width, placeholder_text=placeholder, state=state, fg_color=self._tm.c("WHITE"), text_color=self._tm.c("BLACK"), border_color=self._tm.c("GRAY_LIGHT"))
+        ent = ctk.CTkEntry(
+            parent, width=width, placeholder_text=placeholder, state=state,
+            fg_color=self._tm.c("WHITE"), text_color=self._tm.c("BLACK"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            placeholder_text_color=self._tm.c("GRAY")
+        )
         ent.place(x=x, y=y)
-        self._tw_add(ent, fg_color="WHITE", text_color="BLACK", border_color="GRAY_LIGHT")
+        self._tw_add(ent, fg_color="WHITE", text_color="BLACK", border_color="GRAY_LIGHT", placeholder_text_color="GRAY")
         return ent
 
     def _combo(self, parent, width, values, x=0, y=0):
-        cb = ctk.CTkComboBox(parent, width=width, values=values, fg_color=self._tm.c("WHITE"), text_color=self._tm.c("BLACK"), border_color=self._tm.c("GRAY_LIGHT"))
+        cb = ctk.CTkComboBox(
+            parent, width=width, values=values,
+            fg_color=self._tm.c("WHITE"), text_color=self._tm.c("BLACK"),
+            border_color=self._tm.c("GRAY_LIGHT"),
+            button_color=self._tm.c("WHITE"), button_hover_color=self._tm.c("BLUE_XL"),
+            dropdown_fg_color=self._tm.c("WHITE"), dropdown_text_color=self._tm.c("BLACK"),
+            dropdown_hover_color=self._tm.c("BLUE_XL")
+        )
         cb.place(x=x, y=y)
-        self._tw_add(cb, fg_color="WHITE", text_color="BLACK", border_color="GRAY_LIGHT")
+        self._tw_add(cb, 
+                     fg_color="WHITE", text_color="BLACK", border_color="GRAY_LIGHT", 
+                     button_color="WHITE", button_hover_color="BLUE_XL", 
+                     dropdown_fg_color="WHITE", dropdown_text_color="BLACK", dropdown_hover_color="BLUE_XL")
         return cb
 
     def _cal_button(self, parent, command, x, y):

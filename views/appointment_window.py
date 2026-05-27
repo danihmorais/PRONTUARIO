@@ -1,11 +1,11 @@
 import re
 import sqlite3
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, font
 from tkcalendar import Calendar
 from theme_manager import ThemeManager
-from config import DB_PATH
-
+from config import DB_PATH, BASE_DIR
+import os
 
 def _only_digits(s):
     return re.sub(r"\D", "", str(s))
@@ -78,15 +78,10 @@ class AppointmentWindow(ctk.CTkFrame):
         self.cb_fisio = self._combo_raw(form, 1, 2, 2)
 
         # Data
-        self._lbl(form, "Data *", 2, 0)
-        self.ent_data = ctk.CTkEntry(form, height=36)
-        self.ent_data.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 12))
-        ctk.CTkButton(
-            form, text="📅", width=36, height=36,
-            fg_color=self._tm.c("BLUE"),
-            hover_color=self._tm.c("DARK_BLUE"),
-            command=lambda: self.pop_calendario(self.ent_data)
-        ).grid(row=3, column=0, sticky="e", padx=10, pady=(0, 12))
+        self._lbl(form, "Data *", 2, 0) 
+        self.ent_data = ctk.CTkEntry(form, height=36) 
+        self.ent_data.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 12)) 
+        ctk.CTkButton( form, text="📅", width=36, height=36, fg_color=self._tm.c("BLUE"), hover_color=self._tm.c("DARK_BLUE"), command=lambda: self.pop_calendario(self.ent_data) ).grid(row=3, column=0, sticky="e", padx=10, pady=(0, 12))
 
         # Horário
         self._lbl(form, "Horário * (HH:MM)", 2, 1)
@@ -408,16 +403,53 @@ class AppointmentWindow(ctk.CTkFrame):
         self.cb_fisio.set("")
 
     # ── calendário ────────────────────────────────────────────────────────────
+    def _get_window_scaling(self):
+        return ctk.get_window_scaling()
 
     def pop_calendario(self, entry):
         self._calendar_target = entry
-        self.pop = ctk.CTkToplevel(self)
-        self.pop.geometry("380x280")
-        self.pop.grab_set()
-        self.cal = Calendar(self.pop, date_pattern="dd/mm/yyyy")
-        self.cal.pack()
-        ctk.CTkButton(self.pop, text="Confirmar", command=self._get_data).pack(pady=4)
 
+        self.pop = ctk.CTkToplevel(self)
+        self.pop.title("Prontuário - Calendário")
+        self.pop.grab_set()
+
+        self.pop.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
+
+        self.pop.update_idletasks()
+
+        scale = self._get_window_scaling()
+
+        w = 380
+        h = 280
+
+        screen_w = self.pop.winfo_screenwidth()
+        screen_h = self.pop.winfo_screenheight()
+
+        scaled_w = int(w * scale)
+
+        x = int((screen_w - scaled_w) / 2)
+        y = int((screen_h - h) / 2)
+
+        self.pop.geometry(f"{scaled_w}x{h}+{x}+{y}")
+
+        cal_font = font.Font(family=self._tm.font, size=15)
+
+        self.cal = Calendar(
+            self.pop,
+            date_pattern="dd/mm/yyyy",
+            font=cal_font,
+            headersfont=cal_font,
+            normalfont=cal_font,
+            weekendfont=cal_font
+        )
+
+        self.cal.pack(padx=10, pady=10, expand=True)
+
+        ctk.CTkButton(
+            self.pop,
+            text="Confirmar",
+            command=self._get_data
+        ).pack(pady=4)
     def _get_data(self):
         self._calendar_target.delete(0, "end")
         self._calendar_target.insert("end", self.cal.get_date())

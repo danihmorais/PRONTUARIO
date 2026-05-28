@@ -9,6 +9,7 @@ import Prontuarios from "./pages/Prontuarios";
 import Funcionarios from "./pages/Funcionarios";
 import Exportacao from "./pages/Exportacao";
 import Configuracoes from "./pages/Configuracoes";
+import logo from "./assets/logo.png";
 
 function App() {
   const [autenticado, setAutenticado] = useState(false);
@@ -125,21 +126,40 @@ function App() {
           border: "1px solid var(--border)",
         }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{
-              width: 56, height: 56,
-              background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-              borderRadius: "14px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "28px",
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              width: 72,
+              height: 72,
+              objectFit: "contain",
               margin: "0 auto 1rem",
-            }}>🏥</div>
-            <h2 style={{ margin: "0 0 0.25rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--text-main)", letterSpacing: "-0.03em" }}>
-              Prontuário
-            </h2>
-            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)" }}>
-              Sistema de Gestão Clínica
-            </p>
-          </div>
+              display: "block",
+            }}
+          />
+
+          <h2
+            style={{
+              margin: "0 0 0.25rem",
+              fontSize: "1.4rem",
+              fontWeight: 700,
+              color: "var(--text-main)",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            Prontuário
+          </h2>
+
+          <p
+            style={{
+              margin: 0,
+              fontSize: "14px",
+              color: "var(--text-muted)",
+            }}
+          >
+            Sistema de Gestão Clínica
+          </p>
+        </div>
 
           <form onSubmit={realizarLogin} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>

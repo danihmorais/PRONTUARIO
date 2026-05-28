@@ -35,15 +35,23 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             cpf TEXT NOT NULL,
+            rg TEXT,
+            celular TEXT,
+            telefone TEXT,
+            email TEXT,
             data_nascimento TEXT,
             sexo TEXT,
-            email TEXT,
-            celular TEXT,
+            estado_civil TEXT,
+            profissao TEXT,
+            convenio TEXT,
+            numero_convenio TEXT,
             cep TEXT,
             endereco TEXT,
+            numero TEXT,
             bairro TEXT,
             cidade TEXT,
-            estado TEXT
+            estado TEXT,
+            observacoes TEXT
         );
         CREATE TABLE IF NOT EXISTS fisioterapeutas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

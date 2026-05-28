@@ -390,8 +390,14 @@ export default function Pacientes() {
     try {
       await dbExecute("DELETE FROM pacientes WHERE id = ?", [String(id)]);
       carregar();
-    } catch (e) {
-      alert("Erro ao excluir: " + e);
+    } catch (e: any) {
+      if (String(e).includes("FOREIGN KEY constraint failed")) {
+        alert(
+          "Não é possível excluir este paciente, pois ele possui consultas ou prontuários registrados."
+        );
+      } else {
+        alert("Erro ao excluir: " + e);
+      }
     }
   };
 

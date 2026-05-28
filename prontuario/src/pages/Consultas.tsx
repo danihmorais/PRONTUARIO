@@ -87,7 +87,7 @@ export default function Consultas() {
 
   return (
     <div>
-      <form onSubmit={salvarConsulta} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+      <form onSubmit={salvarConsulta} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", background: "var(--bg-panel)", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
         <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <label>Paciente</label>
           <select value={idPaciente} onChange={(e) => setIdPaciente(e.target.value)} required style={{ padding: "0.5rem" }}>
@@ -123,33 +123,33 @@ export default function Consultas() {
           <input value={observacao} onChange={(e) => setObservacao(e.target.value)} style={{ padding: "0.5rem" }} />
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", width: "100%" }}>
-          <button type="submit" style={{ padding: "0.6rem 1.2rem", background: "#10b981", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+          <button type="submit" style={{ padding: "0.6rem 1.2rem", background: "var(--btn-success)", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
             Agendar Consulta
           </button>
         </div>
       </form>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", background: "var(--bg-panel)", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
         <thead>
-          <tr style={{ background: "#f3f4f6", textAlign: "left" }}>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>ID</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Paciente</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Fisioterapeuta</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Data/Hora</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Status</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb", width: "100px" }}>Ações</th>
+          <tr style={{ background: "var(--bg-base)", textAlign: "left" }}>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>ID</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Paciente</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Fisioterapeuta</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Data/Hora</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Status</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)", width: "100px" }}>Ações</th>
           </tr>
         </thead>
         <tbody>
           {consultas.map((c) => (
             <tr key={c.id}>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{c.id}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{c.paciente_nome}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{c.fisio_nome}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{c.data_consulta} {c.horario}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{c.status}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>
-                <button onClick={() => deletarConsulta(c.id)} style={{ background: "#ef4444", color: "white", border: "none", padding: "0.4rem 0.8rem", borderRadius: "4px", cursor: "pointer" }}>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{c.id}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{c.paciente_nome}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{c.fisio_nome}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{c.data_consulta} {c.horario}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{c.status}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>
+                <button onClick={() => deletarConsulta(c.id)} style={{ background: "var(--btn-danger)", color: "white", border: "none", padding: "0.4rem 0.8rem", borderRadius: "4px", cursor: "pointer" }}>
                   Excluir
                 </button>
               </td>

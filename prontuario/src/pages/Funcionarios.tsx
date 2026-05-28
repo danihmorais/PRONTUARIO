@@ -58,7 +58,7 @@ export default function Funcionarios() {
 
   return (
     <div>
-      <form onSubmit={salvarFuncionario} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+      <form onSubmit={salvarFuncionario} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", background: "var(--bg-panel)", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
         <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <label>Nome</label>
           <input value={nome} onChange={(e) => setNome(e.target.value)} required style={{ padding: "0.5rem" }} />
@@ -76,33 +76,33 @@ export default function Funcionarios() {
           <input value={celular} onChange={(e) => setCelular(e.target.value)} style={{ padding: "0.5rem" }} />
         </div>
         <div style={{ display: "flex", alignItems: "flex-end" }}>
-          <button type="submit" style={{ padding: "0.6rem 1.2rem", background: "#10b981", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", height: "38px" }}>
+          <button type="submit" style={{ padding: "0.6rem 1.2rem", background: "var(--btn-success)", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", height: "38px" }}>
             Adicionar
           </button>
         </div>
       </form>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", background: "var(--bg-panel)", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
         <thead>
-          <tr style={{ background: "#f3f4f6", textAlign: "left" }}>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>ID</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Nome</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Cargo</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>CPF</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>Celular</th>
-            <th style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb", width: "100px" }}>Ações</th>
+          <tr style={{ background: "var(--bg-base)", textAlign: "left" }}>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>ID</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Nome</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Cargo</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>CPF</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>Celular</th>
+            <th style={{ padding: "1rem", borderBottom: "1px solid var(--border)", width: "100px" }}>Ações</th>
           </tr>
         </thead>
         <tbody>
           {funcionarios.map((f) => (
             <tr key={f.id}>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{f.id}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{f.nome}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{f.cargo}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{f.cpf}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>{f.celular}</td>
-              <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>
-                <button onClick={() => deletarFuncionario(f.id)} style={{ background: "#ef4444", color: "white", border: "none", padding: "0.4rem 0.8rem", borderRadius: "4px", cursor: "pointer" }}>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{f.id}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{f.nome}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{f.cargo}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{f.cpf}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>{f.celular}</td>
+              <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)" }}>
+                <button onClick={() => deletarFuncionario(f.id)} style={{ background: "var(--btn-danger)", color: "white", border: "none", padding: "0.4rem 0.8rem", borderRadius: "4px", cursor: "pointer" }}>
                   Excluir
                 </button>
               </td>

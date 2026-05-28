@@ -3,8 +3,10 @@
 use rusqlite::{Connection, Result, types::ValueRef};
 use sha2::{Digest, Sha256};
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::process::Command;
 use tauri::State;
 use serde_json::{Map, Value};
 
@@ -106,6 +108,15 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
+fn limpar_backup() {
+    if let Ok(mut caminho) = env::current_exe() {
+        caminho.set_extension("old");
+        if caminho.exists() {
+            let _ = fs::remove_file(caminho);
+        }
+    }
+}
+
 #[tauri::command]
 fn login(usuario: String, senha: String, state: State<AppState>) -> Result<bool, String> {
     let conn = state.db.lock().unwrap();
@@ -161,7 +172,31 @@ fn db_query(sql: String, params: Vec<String>, state: State<AppState>) -> Result<
     Ok(result)
 }
 
+#[tauri::command]
+async fn aplicar_atualizacao(url: String) -> Result<(), String> {
+    let temp_dir = env::temp_dir();
+    let new_exe_path = temp_dir.join("Prontuario_new.tmp");
+
+    let mut response = reqwest::blocking::get(&url).map_err(|e| e.to_string())?;
+    let mut file = fs::File::create(&new_exe_path).map_err(|e| e.to_string())?;
+    response.copy_to(&mut file).map_err(|e| e.to_string())?;
+
+    let current_exe = env::current_exe().map_err(|e| e.to_string())?;
+    let old_exe = current_exe.with_extension("old");
+
+    if old_exe.exists() {
+        let _ = fs::remove_file(&old_exe);
+    }
+
+    fs::rename(&current_exe, &old_exe).map_err(|e| e.to_string())?;
+    fs::rename(&new_exe_path, &current_exe).map_err(|e| e.to_string())?;
+
+    Command::new(&current_exe).spawn().map_err(|e| e.to_string())?;
+    std::process::exit(0);
+}
+
 fn main() {
+    limpar_backup();
     let caminho_db = obter_caminho_db();
     let conn = Connection::open(caminho_db).unwrap();
     
@@ -171,7 +206,12 @@ fn main() {
         .manage(AppState {
             db: Mutex::new(conn),
         })
-        .invoke_handler(tauri::generate_handler![login, db_execute, db_query])
+        .invoke_handler(tauri::generate_handler![
+            login, 
+            db_execute, 
+            db_query, 
+            aplicar_atualizacao
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

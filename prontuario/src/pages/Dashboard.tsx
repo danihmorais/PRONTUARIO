@@ -26,19 +26,19 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-      <div style={{ background: "#fff", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 1rem 0", color: "#6b7280" }}>Total de Pacientes</h3>
-        <p style={{ fontSize: "3rem", margin: 0, fontWeight: "bold", color: "#1f2937" }}>{totalPacientes}</p>
+      <div style={{ background: "var(--bg-panel)", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "var(--text-muted)" }}>Total de Pacientes</h3>
+        <p style={{ fontSize: "3rem", margin: 0, fontWeight: "bold", color: "var(--text-main)" }}>{totalPacientes}</p>
       </div>
       
-      <div style={{ background: "#fff", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 1rem 0", color: "#6b7280" }}>Consultas Pendentes</h3>
+      <div style={{ background: "var(--bg-panel)", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "var(--text-muted)" }}>Consultas Pendentes</h3>
         <p style={{ fontSize: "3rem", margin: 0, fontWeight: "bold", color: "#f59e0b" }}>{totalConsultasPendentes}</p>
       </div>
 
-      <div style={{ background: "#fff", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 1rem 0", color: "#6b7280" }}>Prontuários Registrados</h3>
-        <p style={{ fontSize: "3rem", margin: 0, fontWeight: "bold", color: "#10b981" }}>{totalProntuarios}</p>
+      <div style={{ background: "var(--bg-panel)", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", flex: "1 1 250px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "var(--text-muted)" }}>Prontuários Registrados</h3>
+        <p style={{ fontSize: "3rem", margin: 0, fontWeight: "bold", color: "var(--btn-success)" }}>{totalProntuarios}</p>
       </div>
     </div>
   );

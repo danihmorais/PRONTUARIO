@@ -1,10 +1,11 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/tauri";
 
-const REPO_URL =
-  "https://api.github.com/repos/danihmorais/PRONTUARIO/releases/latest";
+const REPO_URL = "https://api.github.com/repos/danihmorais/PRONTUARIO/releases/latest";
 
-export async function verificarAtualizacao() {
+export async function verificarAtualizacao(
+  setAguardandoUpdate: (estado: boolean) => void
+) {
   try {
     const res = await fetch(REPO_URL);
 
@@ -17,13 +18,10 @@ export async function verificarAtualizacao() {
 
     const latestTag = data.tag_name;
     const currentVersion = await getVersion();
-
     const cleanTag = latestTag.replace("v", "");
 
     if (cleanTag === currentVersion) {
-      alert(
-        `Você já está na versão mais recente (${currentVersion}).`
-      );
+      alert(`Você já está na versão mais recente (${currentVersion}).`);
       return;
     }
 
@@ -32,37 +30,26 @@ export async function verificarAtualizacao() {
     );
 
     if (!asset) {
-      alert(
-        "Nenhum instalador encontrado na release."
-      );
+      alert("Nenhum executável encontrado na release.");
       return;
     }
 
-    const dataPub = new Date(
-      data.published_at
-    ).toLocaleDateString("pt-BR");
+    const dataPub = new Date(data.published_at).toLocaleDateString("pt-BR");
 
     const confirmar = window.confirm(
-      `Nova versão disponível: ${latestTag}\nPublicada em: ${dataPub}\n\nDeseja baixar e atualizar agora?`
+      `Nova versão disponível: ${latestTag}\nPublicada em: ${dataPub}\n\nDeseja baixar e aplicar a atualização agora?\n\nATENÇÃO: Salve todos os dados antes de continuar. A aplicação será reiniciada.`
     );
 
     if (!confirmar) return;
 
-    alert(
-      "O sistema está a descarregar a atualização em segundo plano.\n\nA aplicação será reiniciada automaticamente ao concluir."
-    );
+    setAguardandoUpdate(true);
 
     await invoke("aplicar_atualizacao", {
       url: asset.browser_download_url,
     });
   } catch (error) {
-    console.error(
-      "Erro ao verificar atualização:",
-      error
-    );
-
-    alert(
-      "Erro ao verificar atualização.\nVerifique sua conexão ou o repositório."
-    );
+    console.error("Erro ao verificar atualização:", error);
+    alert("Erro ao verificar atualização.\nVerifique sua conexão ou o repositório.");
+    setAguardandoUpdate(false);
   }
 }

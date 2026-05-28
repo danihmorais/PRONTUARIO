@@ -7,16 +7,20 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::process::Command;
-use tauri::State;
+use tauri::{State, Manager, AppHandle};
 use serde_json::{Map, Value};
 
 struct AppState {
     db: Mutex<Connection>,
 }
 
-fn obter_caminho_db() -> PathBuf {
-    let mut caminho = env::current_exe().unwrap();
-    caminho.pop();
+fn obter_caminho_db(app_handle: &AppHandle) -> PathBuf {
+    let mut caminho = app_handle.path_resolver().app_data_dir().expect("Falha ao obter diretorio de dados do app");
+    
+    if !caminho.exists() {
+        fs::create_dir_all(&caminho).unwrap();
+    }
+    
     caminho.push("prontuario.db");
     caminho
 }
@@ -113,15 +117,6 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
     }
 
     Ok(())
-}
-
-fn limpar_backup() {
-    if let Ok(mut caminho) = env::current_exe() {
-        caminho.set_extension("old");
-        if caminho.exists() {
-            let _ = fs::remove_file(caminho);
-        }
-    }
 }
 
 #[tauri::command]
@@ -230,14 +225,26 @@ fn aplicar_atualizacao(url: String) -> Result<(), String> {
 }
 
 fn main() {
-    limpar_backup();
-    let caminho_db = obter_caminho_db();
-    let conn = Connection::open(caminho_db).unwrap();
-    inicializar_banco(&conn).unwrap();
-
     tauri::Builder::default()
-        .manage(AppState {
-            db: Mutex::new(conn),
+        .setup(|app| {
+            let handle = app.handle();
+            let caminho_db = obter_caminho_db(&handle);
+            let conn = Connection::open(caminho_db).unwrap();
+            
+            inicializar_banco(&conn).unwrap();
+            
+            app.manage(AppState {
+                db: Mutex::new(conn),
+            });
+
+            if let Ok(mut caminho_exe) = env::current_exe() {
+                caminho_exe.set_extension("old");
+                if caminho_exe.exists() {
+                    let _ = fs::remove_file(caminho_exe);
+                }
+            }
+
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             login,

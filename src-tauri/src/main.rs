@@ -98,7 +98,6 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
         let mut hasher = Sha256::new();
         hasher.update(b"admin");
         let senha_hash = format!("{:x}", hasher.finalize());
-
         conn.execute(
             "INSERT INTO usuarios (usuario, senha, nivel) VALUES (?1, ?2, ?3)",
             (&"admin", &senha_hash, &"admin"),
@@ -118,21 +117,23 @@ fn limpar_backup() {
 }
 
 #[tauri::command]
-fn login(usuario: String, senha: String, state: State<AppState>) -> Result<bool, String> {
+fn login(usuario: String, senha: String, state: State<AppState>) -> Result<String, String> {
     let conn = state.db.lock().unwrap();
     let mut hasher = Sha256::new();
     hasher.update(senha.as_bytes());
     let senha_hash = format!("{:x}", hasher.finalize());
 
     let mut stmt = conn
-        .prepare("SELECT COUNT(*) FROM usuarios WHERE usuario = ?1 AND senha = ?2")
-        .map_err(|e| e.to_string())?;
-        
-    let count: i64 = stmt
-        .query_row([&usuario, &senha_hash], |row| row.get(0))
+        .prepare("SELECT nivel FROM usuarios WHERE usuario = ?1 AND senha = ?2")
         .map_err(|e| e.to_string())?;
 
-    Ok(count > 0)
+    let resultado: rusqlite::Result<String> = stmt.query_row([&usuario, &senha_hash], |row| row.get(0));
+
+    match resultado {
+        Ok(nivel) => Ok(nivel),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Err("Usuário ou senha inválidos.".to_string()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 #[tauri::command]
@@ -147,9 +148,9 @@ fn db_query(sql: String, params: Vec<String>, state: State<AppState>) -> Result<
     let conn = state.db.lock().unwrap();
     let params_ref: Vec<&dyn rusqlite::ToSql> = params.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    
+
     let column_names: Vec<String> = stmt.column_names().into_iter().map(|c| c.to_string()).collect();
-    
+
     let rows = stmt.query_map(params_ref.as_slice(), |row| {
         let mut map = Map::new();
         for (i, name) in column_names.iter().enumerate() {
@@ -170,6 +171,31 @@ fn db_query(sql: String, params: Vec<String>, state: State<AppState>) -> Result<
         result.push(row.map_err(|e| e.to_string())?);
     }
     Ok(result)
+}
+
+#[tauri::command]
+fn alterar_senha(usuario: String, senha_atual: String, nova_senha: String, state: State<AppState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    let mut hasher = Sha256::new();
+    hasher.update(senha_atual.as_bytes());
+    let hash_atual = format!("{:x}", hasher.finalize());
+
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM usuarios WHERE usuario = ?1 AND senha = ?2", [&usuario, &hash_atual], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+
+    if count == 0 {
+        return Err("Senha atual incorreta.".to_string());
+    }
+
+    let mut hasher2 = Sha256::new();
+    hasher2.update(nova_senha.as_bytes());
+    let novo_hash = format!("{:x}", hasher2.finalize());
+
+    conn.execute("UPDATE usuarios SET senha = ?1 WHERE usuario = ?2", [&novo_hash, &usuario])
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -199,7 +225,6 @@ fn main() {
     limpar_backup();
     let caminho_db = obter_caminho_db();
     let conn = Connection::open(caminho_db).unwrap();
-    
     inicializar_banco(&conn).unwrap();
 
     tauri::Builder::default()
@@ -207,9 +232,10 @@ fn main() {
             db: Mutex::new(conn),
         })
         .invoke_handler(tauri::generate_handler![
-            login, 
-            db_execute, 
-            db_query, 
+            login,
+            db_execute,
+            db_query,
+            alterar_senha,
             aplicar_atualizacao
         ])
         .run(tauri::generate_context!())

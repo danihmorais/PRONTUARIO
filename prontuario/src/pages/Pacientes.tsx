@@ -39,7 +39,7 @@ export default function Pacientes() {
       setCelular("");
       carregarPacientes();
     } catch (e) {
-      alert("Erro ao salvar: " + e);
+      alert(`Erro ao salvar: ${String(e)}`);
     }
   };
 
@@ -49,7 +49,7 @@ export default function Pacientes() {
       await dbExecute("DELETE FROM pacientes WHERE id = ?", [id.toString()]);
       carregarPacientes();
     } catch (e) {
-      alert("Erro ao deletar: " + e);
+      alert(`Erro ao deletar: ${String(e)}`);
     }
   };
 

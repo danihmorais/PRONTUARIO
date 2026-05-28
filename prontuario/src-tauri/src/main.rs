@@ -173,7 +173,7 @@ fn db_query(sql: String, params: Vec<String>, state: State<AppState>) -> Result<
 }
 
 #[tauri::command]
-async fn aplicar_atualizacao(url: String) -> Result<(), String> {
+fn aplicar_atualizacao(url: String) -> Result<(), String> {
     let temp_dir = env::temp_dir();
     let new_exe_path = temp_dir.join("Prontuario_new.tmp");
 

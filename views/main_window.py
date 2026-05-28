@@ -47,10 +47,7 @@ class MainWindow(ctk.CTk):
         self.controller            = controller
         self._current_view: str    = ""
 
-        try:
-            self.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
-        except Exception:
-            pass
+        self.iconbitmap(os.path.join(BASE_DIR, "assets", "icon.ico"))
         self.title("Prontuário — Dashboard")
         self.configure(fg_color=self._tm.c("GRAY_BG"))
         self.minsize(1280, 720)

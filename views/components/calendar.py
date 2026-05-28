@@ -31,13 +31,6 @@ class CalendarPopup:
         self.top.grab_set()
         self.top.focus_force()
 
-        try:
-            self.top.iconbitmap(
-                os.path.join(BASE_DIR, "assets", "icon.ico")
-            )
-        except:
-            pass
-
         self._center_window()
 
         colors = self._tm.colors

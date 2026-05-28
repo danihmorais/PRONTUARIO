@@ -214,7 +214,7 @@ class AppointmentView(ctk.CTkFrame):
             row=3,
             column=0,
             sticky="e",
-            padx=10,
+            padx=0,
             pady=(0, 12)
         )
 

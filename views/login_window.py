@@ -22,10 +22,7 @@ class LoginWindow(ctk.CTk):
         self.title("Bem-Vindo!")
         self.resizable(False, False)
 
-        try:
-            self.iconbitmap('assets/icon.ico')
-        except Exception:
-            pass
+        self.iconbitmap('assets/icon.ico')
 
         self._tm = ThemeManager.get()
         ctk.set_appearance_mode("dark" if self._tm.is_dark else "light")

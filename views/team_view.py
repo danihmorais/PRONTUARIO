@@ -4,6 +4,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from theme_manager import ThemeManager
 from config import DB_PATH
+from views.components.buttons import FooterButtons
 
 
 def _only_digits(s):
@@ -260,12 +261,7 @@ class TeamView(ctk.CTkFrame):
             padx=(0, 6)
         )
 
-        try:
-            self._scroll._scrollbar.grid_configure(
-                padx=(0, 6)
-            )
-        except Exception:
-            pass
+        self._scroll._scrollbar.grid_configure(padx=(0, 6))
 
         self._tw(
             self._scroll,
@@ -275,16 +271,16 @@ class TeamView(ctk.CTkFrame):
         footer = ctk.CTkFrame(self, fg_color="transparent")
         footer.pack(fill="x", pady=(12, 0))
 
+        footer.grid_columnconfigure(0, weight=1)
+        footer.grid_columnconfigure(1, weight=0)
+
         self.lbl_count = ctk.CTkLabel(
             footer,
             text="",
             font=(self._tm.font, 12),
             text_color=self._tm.c("GRAY"),
         )
-
-        self.lbl_count.pack(side="left")
-
-        self._tw(self.lbl_count, text_color="GRAY")
+        self.lbl_count.grid(row=0, column=0, sticky="w")
 
         self.lbl_sel = ctk.CTkLabel(
             footer,
@@ -292,52 +288,16 @@ class TeamView(ctk.CTkFrame):
             font=(self._tm.font, 12),
             text_color=self._tm.c("BLUE"),
         )
+        self.lbl_sel.grid(row=0, column=0, sticky="w", padx=(180, 0))
 
-        self.lbl_sel.pack(side="left", padx=(20, 0))
-
-        self._tw(self.lbl_sel, text_color="BLUE")
-
-        btn_excluir = ctk.CTkButton(
+        self.footer_buttons = FooterButtons(
             footer,
-            text="🗑  Excluir",
-            height=38,
-            width=130,
-            fg_color=self._tm.c("RED_LIGHT"),
-            hover_color=self._tm.c("RED"),
-            text_color=self._tm.c("RED"),
-            font=(self._tm.font, 13, "bold"),
-            command=self._excluir,
+            theme_manager=self._tm,
+            on_editar=self._editar,
+            on_excluir=self._excluir,
         )
-
-        btn_excluir.pack(side="right")
-
-        self._tw(
-            btn_excluir,
-            fg_color="RED_LIGHT",
-            hover_color="RED",
-            text_color="RED"
-        )
-
-        btn_editar = ctk.CTkButton(
-            footer,
-            text="✏  Editar",
-            height=38,
-            width=130,
-            fg_color=self._tm.c("BLUE"),
-            hover_color=self._tm.c("DARK_BLUE"),
-            text_color=self._tm.c("TOPBAR_TEXT"),
-            font=(self._tm.font, 13, "bold"),
-            command=self._editar,
-        )
-
-        btn_editar.pack(side="right", padx=10)
-
-        self._tw(
-            btn_editar,
-            fg_color="BLUE",
-            hover_color="DARK_BLUE",
-            text_color="TOPBAR_TEXT"
-        )
+        self.footer_buttons.apply_theme(self._tm.colors)
+        self.footer_buttons.grid(row=0, column=1, sticky="e")
 
     def buscar(self):
         termo = f"%{self.ent_busca.get().strip()}%"

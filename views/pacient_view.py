@@ -4,6 +4,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from config import DB_PATH
 from theme_manager import ThemeManager
+from views.components.buttons import FooterButtons
 
 
 def _only_digits(s):
@@ -158,42 +159,19 @@ class PacientView(ctk.CTkFrame):
 
         self.lbl_status.grid(row=0, column=0, sticky="w")
 
-        btn_frame = ctk.CTkFrame(footer, fg_color="transparent")
-        btn_frame.grid(row=0, column=1, sticky="e")
-
-        self.btn_excluir = ctk.CTkButton(
-            btn_frame,
-            width=130,
-            height=40,
-            text="🗑  Excluir",
-            fg_color=self._tm.c("RED_LIGHT"),
-            hover_color=self._tm.c("RED"),
-            text_color=self._tm.c("RED"),
-            font=(self._tm.font, 13, "bold"),
-            corner_radius=8,
-            command=self._excluir,
+        self.footer_buttons = FooterButtons(
+            footer,
+            theme_manager=self._tm,
+            on_editar=self._editar,
+            on_excluir=self._excluir,
         )
 
-        self.btn_excluir.pack(side="right")
-
-        self.btn_editar = ctk.CTkButton(
-            btn_frame,
-            width=130,
-            height=40,
-            text="✏  Editar",
-            fg_color=self._tm.c("BLUE"),
-            hover_color=self._tm.c("DARK_BLUE"),
-            text_color=self._tm.c("TOPBAR_TEXT"),
-            font=(self._tm.font, 13, "bold"),
-            corner_radius=8,
-            command=self._editar,
-        )
-
-        self.btn_editar.pack(side="right", padx=10)
+        self.footer_buttons.grid(row=0, column=1, sticky="e")
+        self.footer_buttons.apply_theme(self._tm.colors)
 
         if self._on_select:
             self.btn_select = ctk.CTkButton(
-                btn_frame,
+                self.footer_buttons,
                 width=140,
                 height=40,
                 text="✔  Selecionar",

@@ -60,11 +60,7 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
         CREATE TABLE IF NOT EXISTS fisioterapeutas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            crefito TEXT NOT NULL,
-            especialidade TEXT,
-            cpf TEXT NOT NULL,
-            email TEXT,
-            celular TEXT
+            crefito TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS funcionarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,12 +89,51 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
         );
         CREATE TABLE IF NOT EXISTS prontuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             id_paciente INTEGER REFERENCES pacientes(id),
+
+            idade TEXT,
+            telefone TEXT,
+            profissao TEXT,
+
             data_registro TEXT,
+
             queixa TEXT,
-            exame TEXT,
+            historia_atual TEXT,
+            medicamentos TEXT,
+
+            exame_rx INTEGER DEFAULT 0,
+            exame_rm INTEGER DEFAULT 0,
+            exame_usg INTEGER DEFAULT 0,
+            exame_tc INTEGER DEFAULT 0,
+            exames_obs TEXT,
+
+            dor_local TEXT,
+            dor_eva TEXT,
+            dor_irradia TEXT,
+            dor_formigamento TEXT,
+            dor_limitacao TEXT,
+
+            inspecao TEXT,
+            palpacao TEXT,
+            adm TEXT,
+            forca TEXT,
+
             diagnostico TEXT,
-            prescricao TEXT
+            objetivo_tratamento TEXT,
+
+            conduta_terapia_manual INTEGER DEFAULT 0,
+            conduta_liberacao INTEGER DEFAULT 0,
+            conduta_mobilizacao INTEGER DEFAULT 0,
+            conduta_alongamento INTEGER DEFAULT 0,
+            conduta_exercicios INTEGER DEFAULT 0,
+            conduta_outras TEXT,
+
+            evolucao_data TEXT,
+            evolucao TEXT,
+
+            fisioterapeuta_nome TEXT,
+            fisioterapeuta_crefito TEXT
         );
         ",
     )?;

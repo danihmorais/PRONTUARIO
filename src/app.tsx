@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Pacientes from "./pages/Pacientes";
-import Fisioterapeutas from "./pages/Fisioterapeutas";
 import Consultas from "./pages/Consultas";
 import Prontuarios from "./pages/Prontuarios";
 import Funcionarios from "./pages/Funcionarios";
 import Exportacao from "./pages/Exportacao";
 import Configuracoes from "./pages/Configuracoes";
 import logo from "./assets/logo.png";
+import { dbQuery } from "./db";
+
+interface Configuracao {
+  chave: string;
+  valor: string;
+}
 
 function App() {
   const [autenticado, setAutenticado] = useState(false);
@@ -48,13 +53,35 @@ function App() {
     switch (paginaAtual) {
       case "Dashboard": return <Dashboard />;
       case "Pacientes": return <Pacientes />;
-      case "Fisioterapeutas": return <Fisioterapeutas />;
       case "Funcionários": return <Funcionarios />;
       case "Consultas": return <Consultas />;
       case "Prontuários": return <Prontuarios />;
       case "Exportação": return <Exportacao />;
       case "Configurações": return <Configuracoes usuario={usuario} nivel={nivelUsuario} />;
       default: return <Dashboard />;
+    }
+  };
+  
+  const [fisioterapeutaNome, setFisioterapeutaNome] = useState("");
+
+  useEffect(() => {
+    carregarConfiguracoes();
+  }, []);
+
+  const carregarConfiguracoes = async () => {
+    try {
+      const resConf = await dbQuery<Configuracao>(`
+        SELECT chave, valor
+        FROM configuracoes
+        WHERE chave = 'fisioterapeuta_nome'
+      `);
+
+      const nome =
+        resConf.find((c) => c.chave === "fisioterapeuta_nome")?.valor || "";
+
+      setFisioterapeutaNome(nome);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -71,6 +98,7 @@ function App() {
           <div style={{
             padding: "1rem 2rem",
             borderBottom: "1px solid var(--border)",
+            height:"80px",
             background: "var(--bg-panel)",
             display: "flex",
             alignItems: "center",
@@ -92,7 +120,9 @@ function App() {
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
               }}>
-                Admin
+                {fisioterapeutaNome
+                ? fisioterapeutaNome.split(" ")[0]
+                : "Fisioterapeuta"}
               </span>
             )}
           </div>

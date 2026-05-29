@@ -76,6 +76,10 @@ export default function Configuracoes({ usuario, nivel }: Props) {
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
+  const [nomeProfissional, setNomeProfissional] = useState("");
+  const [crefitoProfissional, setCrefitoProfissional] = useState("");
+  const [salvandoProfissional, setSalvandoProfissional] = useState(false);
+
   const [statusSenha, setStatusSenha] = useState<{
     tipo: "sucesso" | "erro";
     msg: string;
@@ -97,42 +101,7 @@ export default function Configuracoes({ usuario, nivel }: Props) {
   const [fazendoBackup, setFazendoBackup] = useState(false);
   const [atualizando, setAtualizando] = useState(false);
 
-  useEffect(() => {
-    getVersion()
-      .then(setVersao)
-      .catch(() => setVersao("—"));
-
-    const carregarBanco = async () => {
-      try {
-        const dir = await appDataDir();
-
-        const caminhos = [
-          await join(dir, "prontuario.db"),
-          await join(dir, ".prontuario.db"),
-        ];
-
-        for (const caminho of caminhos) {
-          const existe = await exists(caminho);
-
-          if (existe) {
-            setDbPath(caminho);
-            return;
-          }
-        }
-
-        setDbPath(caminhos[0]);
-      } catch {
-        setDbPath("Não encontrado");
-      }
-    };
-
-    carregarBanco();
-
-    if (nivel === "admin") {
-      carregarUsuarios();
-    }
-  }, [nivel]);
-
+  useEffect(() => { getVersion() .then(setVersao) .catch(() => setVersao("—")); const carregarBanco = async () => { try { const dir = await appDataDir(); const caminhos = [ await join(dir, "prontuario.db"), await join(dir, ".prontuario.db"), ]; for (const caminho of caminhos) { const existe = await exists(caminho); if (existe) { setDbPath(caminho); return; } } setDbPath(caminhos[0]); } catch { setDbPath("Não encontrado"); } }; carregarBanco(); carregarProfissional(); if (nivel === "admin") { carregarUsuarios(); } }, [nivel]);
   const carregarUsuarios = async () => {
     try {
       const res = await dbQuery<Usuario>(
@@ -286,6 +255,30 @@ export default function Configuracoes({ usuario, nivel }: Props) {
   const acionarUpdate = () => {
     verificarAtualizacao(setAtualizando);
   };
+
+  const carregarProfissional = async () => {
+    try {
+      const res = await dbQuery<{
+        nome_profissional: string;
+        crefito_profissional: string;
+      }>(
+        `SELECT
+          nome_profissional,
+          crefito_profissional
+        FROM configuracoes
+        LIMIT 1`
+      );
+
+      if (res.length > 0) {
+        setNomeProfissional(res[0].nome_profissional || "");
+        setCrefitoProfissional(res[0].crefito_profissional || "");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const salvarProfissional = async ( e: React.FormEvent ) => { e.preventDefault(); try { setSalvandoProfissional(true); await dbExecute( `UPDATE configuracoes SET nome_profissional = ?, crefito_profissional = ? WHERE id = 1`, [ nomeProfissional, crefitoProfissional, ] ); alert("Dados profissionais salvos."); } catch (e) { alert("Erro ao salvar: " + e); } finally { setSalvandoProfissional(false); } };
 
   const msgStyle = (tipo: "sucesso" | "erro"): React.CSSProperties => ({
     padding: "0.55rem 0.85rem",
@@ -524,8 +517,70 @@ export default function Configuracoes({ usuario, nivel }: Props) {
               </form>
             </div>
           )}
-        </div>
+        
+        <div style={secaoStyle}>
+        {tituloSecao("Dados do Profissional")}
 
+        <form
+          onSubmit={salvarProfissional}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: "0.7rem",
+          }}
+        >
+          <div>
+            <label style={labelStyle}>
+              Nome do profissional
+            </label>
+
+            <input
+              value={nomeProfissional}
+              onChange={(e) =>
+                setNomeProfissional(e.target.value)
+              }
+              placeholder="Nome completo"
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              CREFITO
+            </label>
+
+            <input
+              value={crefitoProfissional}
+              onChange={(e) =>
+                setCrefitoProfissional(e.target.value)
+              }
+              placeholder="Ex: 12345-F"
+              style={inputStyle}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={salvandoProfissional}
+            style={{
+              padding: "0.62rem",
+              background: "var(--btn-success)",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              gridColumn: "1 / -1",
+            }}
+          >
+            {salvandoProfissional
+              ? "Salvando..."
+              : "Salvar Dados"}
+          </button>
+        </form>
+        </div>
+        </div>
         <div
           style={{
             display: "flex",
@@ -754,7 +809,7 @@ export default function Configuracoes({ usuario, nivel }: Props) {
               Verificar Atualizações
             </button>
           </div>
-        </div>
+        </div>      
       </div>
     </>
   );

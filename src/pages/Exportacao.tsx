@@ -3,7 +3,6 @@ import { dbQuery } from "../db";
 
 const tabelas = [
   { id: "pacientes", label: "Pacientes", descricao: "Nome, CPF, contato e dados pessoais" },
-  { id: "fisioterapeutas", label: "Fisioterapeutas", descricao: "CREFITO, especialidade e contato" },
   { id: "funcionarios", label: "Funcionários", descricao: "Cargo, CPF e dados cadastrais" },
   { id: "consultas", label: "Consultas", descricao: "Agendamentos e status" },
   { id: "prontuarios", label: "Prontuários", descricao: "Queixas, diagnósticos e prescrições" },

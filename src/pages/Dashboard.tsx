@@ -5,7 +5,6 @@ interface Metricas {
   totalPacientes: number;
   consultasPendentes: number;
   totalProntuarios: number;
-  totalFisios: number;
 }
 
 interface ConsultaRecente {
@@ -30,17 +29,16 @@ const cardStyle = (cor: string): React.CSSProperties => ({
 });
 
 export default function Dashboard() {
-  const [metricas, setMetricas] = useState<Metricas>({ totalPacientes: 0, consultasPendentes: 0, totalProntuarios: 0, totalFisios: 0 });
+  const [metricas, setMetricas] = useState<Metricas>({ totalPacientes: 0, consultasPendentes: 0, totalProntuarios: 0 });
   const [recentes, setRecentes] = useState<ConsultaRecente[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const carregar = async () => {
     try {
-      const [pac, cons, pron, fisios, consultasRec] = await Promise.all([
+      const [pac, cons, pron, consultasRec] = await Promise.all([
         dbQuery<{ total: number }>("SELECT COUNT(*) as total FROM pacientes"),
         dbQuery<{ total: number }>("SELECT COUNT(*) as total FROM consultas WHERE status = 'Pendente'"),
         dbQuery<{ total: number }>("SELECT COUNT(*) as total FROM prontuarios"),
-        dbQuery<{ total: number }>("SELECT COUNT(*) as total FROM fisioterapeutas"),
         dbQuery<ConsultaRecente>(`
           SELECT p.nome as paciente_nome, f.nome as fisio_nome, c.data_consulta, c.horario, c.status
           FROM consultas c
@@ -53,7 +51,6 @@ export default function Dashboard() {
         totalPacientes: pac[0]?.total ?? 0,
         consultasPendentes: cons[0]?.total ?? 0,
         totalProntuarios: pron[0]?.total ?? 0,
-        totalFisios: fisios[0]?.total ?? 0,
       });
       setRecentes(consultasRec);
     } catch (e) {
@@ -100,11 +97,6 @@ export default function Dashboard() {
           <div style={{ fontSize: "2.5rem", fontWeight: 700, color: "#059669", lineHeight: 1 }}>{metricas.totalProntuarios}</div>
           <div style={{ fontSize: "12px", color: "var(--text-light)" }}>registros</div>
         </div>
-        <div style={cardStyle("#7c3aed")}>
-          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Fisioterapeutas</div>
-          <div style={{ fontSize: "2.5rem", fontWeight: 700, color: "#7c3aed", lineHeight: 1 }}>{metricas.totalFisios}</div>
-          <div style={{ fontSize: "12px", color: "var(--text-light)" }}>ativos</div>
-        </div>
       </div>
 
       <div style={{ background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
@@ -123,7 +115,6 @@ export default function Dashboard() {
             <thead>
               <tr style={{ background: "var(--bg-subtle)" }}>
                 <th style={{ padding: "0.75rem 1.5rem", textAlign: "left" }}>Paciente</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "left" }}>Fisioterapeuta</th>
                 <th style={{ padding: "0.75rem 1rem", textAlign: "left" }}>Data / Hora</th>
                 <th style={{ padding: "0.75rem 1.5rem", textAlign: "left" }}>Status</th>
               </tr>

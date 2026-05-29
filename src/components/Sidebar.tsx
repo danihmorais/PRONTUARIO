@@ -12,7 +12,6 @@ interface SidebarProps {
 const menuItens = [
   { nome: "Dashboard", icone: "⊞" },
   { nome: "Pacientes", icone: "👤" },
-  { nome: "Fisioterapeutas", icone: "🩺" },
   { nome: "Funcionários", icone: "👥" },
   { nome: "Consultas", icone: "📅" },
   { nome: "Prontuários", icone: "📋" },
@@ -31,8 +30,8 @@ export default function Sidebar({
   return (
     <aside
       style={{
-        width: "250px",
-        minWidth: "250px",
+        width: "200px",
+        minWidth: "200px",
         background: "var(--sidebar-bg)",
         borderRight: "1px solid rgba(255,255,255,0.06)",
         display: "flex",

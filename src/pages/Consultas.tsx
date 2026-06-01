@@ -127,11 +127,11 @@ export default function Consultas() {
 
     setIdPaciente(String(c.id_paciente));
     setIdFisio(String(c.id_fisioterapeuta));
-    setDataConsulta(c.data_consulta);
-    setHorario(c.horario);
-    setStatus(c.status);
+    setDataConsulta(c.data_consulta ?? "");
+    setHorario(c.horario ?? "");
+    setStatus(c.status ?? "Pendente");
     setObservacao(c.observacao ?? "");
-    setBuscaPaciente(c.paciente_nome);
+    setBuscaPaciente(c.paciente_nome ?? "");
 
     window.scrollTo({
       top: 0,
@@ -192,8 +192,12 @@ export default function Consultas() {
     try {
       await dbExecute("DELETE FROM consultas WHERE id = ?", [String(id)]);
       carregar();
-    } catch (e) {
-      alert("Erro ao excluir: " + e);
+    } catch (e: any) {
+      if (String(e).includes("FOREIGN KEY constraint failed")) {
+        alert("Não é possível excluir esta consulta pois ela possui registros vinculados.");
+      } else {
+        alert("Erro ao excluir: " + e);
+      }
     }
   };
 

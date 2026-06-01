@@ -5,7 +5,6 @@ import Dashboard from "./pages/Dashboard";
 import Pacientes from "./pages/Pacientes";
 import Consultas from "./pages/Consultas";
 import Prontuarios from "./pages/Prontuarios";
-import Funcionarios from "./pages/Funcionarios";
 import Exportacao from "./pages/Exportacao";
 import Configuracoes from "./pages/Configuracoes";
 import logo from "./assets/logo.png";
@@ -53,7 +52,6 @@ function App() {
     switch (paginaAtual) {
       case "Dashboard": return <Dashboard />;
       case "Pacientes": return <Pacientes />;
-      case "Funcionários": return <Funcionarios />;
       case "Consultas": return <Consultas />;
       case "Prontuários": return <Prontuarios />;
       case "Exportação": return <Exportacao />;

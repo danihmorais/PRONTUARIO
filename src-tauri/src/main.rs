@@ -62,20 +62,6 @@ fn inicializar_banco(conn: &Connection) -> Result<()> {
             nome TEXT NOT NULL,
             crefito TEXT NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS funcionarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            cargo TEXT NOT NULL,
-            cpf TEXT NOT NULL,
-            data_nascimento TEXT,
-            email TEXT,
-            celular TEXT,
-            cep TEXT,
-            endereco TEXT,
-            bairro TEXT,
-            cidade TEXT,
-            estado TEXT
-        );
         CREATE TABLE IF NOT EXISTS consultas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_paciente INTEGER REFERENCES pacientes(id),

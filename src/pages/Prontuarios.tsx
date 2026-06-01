@@ -130,6 +130,14 @@ const cardBodyStyle: React.CSSProperties = {
 };
 
 export default function Prontuarios() {
+  const dataAtualLocal = () => {
+    const d = new Date();
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, "0");
+    const dia = String(d.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  };
+
   const [prontuarios, setProntuarios] = useState<Prontuario[]>([]);
   const [pacientes, setPacientes] = useState<ItemSeletor[]>([]);
   const [busca, setBusca] = useState("");
@@ -147,7 +155,7 @@ export default function Prontuarios() {
   const [idade, setIdade] = useState("");
   const [telefone, setTelefone] = useState("");
   const [profissao, setProfissao] = useState("");
-  const [dataRegistro, setDataRegistro] = useState(new Date().toISOString().split("T")[0]);
+  const [dataRegistro, setDataRegistro] = useState(dataAtualLocal());
   
   const [queixa, setQueixa] = useState("");
   const [historiaAtual, setHistoriaAtual] = useState("");
@@ -180,7 +188,7 @@ export default function Prontuarios() {
   const [condutaExercicios, setCondutaExercicios] = useState(false);
   const [condutaOutras, setCondutaOutras] = useState("");
   
-  const [evolucaoData, setEvolucaoData] = useState(new Date().toISOString().split("T")[0]);
+  const [evolucaoData, setEvolucaoData] = useState(dataAtualLocal());
   const [evolucao, setEvolucao] = useState("");
 
   const [salvando, setSalvando] = useState(false);
@@ -287,7 +295,7 @@ export default function Prontuarios() {
     setIdade("");
     setTelefone("");
     setProfissao("");
-    setDataRegistro(new Date().toISOString().split("T")[0]);
+    setDataRegistro(dataAtualLocal());
     setQueixa("");
     setHistoriaAtual("");
     setMedicamentos("");
@@ -313,7 +321,7 @@ export default function Prontuarios() {
     setCondutaAlongamento(false);
     setCondutaExercicios(false);
     setCondutaOutras("");
-    setEvolucaoData(new Date().toISOString().split("T")[0]);
+    setEvolucaoData(dataAtualLocal());
     setEvolucao("");
     setEditando(null);
   };
@@ -321,38 +329,38 @@ export default function Prontuarios() {
   const preencherEdicao = (pr: Prontuario) => {
     setEditando(pr);
     setIdPaciente(String(pr.id_paciente));
-    setBuscaPaciente(pr.paciente_nome);
-    setIdade(pr.idade || "");
-    setTelefone(pr.telefone || "");
-    setProfissao(pr.profissao || "");
-    setDataRegistro(pr.data_registro);
-    setQueixa(pr.queixa || "");
-    setHistoriaAtual(pr.historia_atual || "");
-    setMedicamentos(pr.medicamentos || "");
+    setBuscaPaciente(pr.paciente_nome ?? "");
+    setIdade(pr.idade ?? "");
+    setTelefone(pr.telefone ?? "");
+    setProfissao(pr.profissao ?? "");
+    setDataRegistro(pr.data_registro ?? dataAtualLocal());
+    setQueixa(pr.queixa ?? "");
+    setHistoriaAtual(pr.historia_atual ?? "");
+    setMedicamentos(pr.medicamentos ?? "");
     setExameRx(Boolean(pr.exame_rx));
     setExameRm(Boolean(pr.exame_rm));
     setExameUsg(Boolean(pr.exame_usg));
     setExameTc(Boolean(pr.exame_tc));
-    setExamesObs(pr.exames_obs || "");
-    setDorLocal(pr.dor_local || "");
-    setDorEva(pr.dor_eva || 0);
+    setExamesObs(pr.exames_obs ?? "");
+    setDorLocal(pr.dor_local ?? "");
+    setDorEva(pr.dor_eva ?? 0);
     setDorIrradia(Boolean(pr.dor_irradia));
     setDorFormigamento(Boolean(pr.dor_formigamento));
     setDorLimitacao(Boolean(pr.dor_limitacao));
-    setInspecao(pr.inspecao || "");
-    setPalpacao(pr.palpacao || "");
-    setAdm(pr.adm || "");
-    setForca(pr.forca || "");
-    setDiagnostico(pr.diagnostico || "");
-    setObjetivoTratamento(pr.objetivo_tratamento || "");
+    setInspecao(pr.inspecao ?? "");
+    setPalpacao(pr.palpacao ?? "");
+    setAdm(pr.adm ?? "");
+    setForca(pr.forca ?? "");
+    setDiagnostico(pr.diagnostico ?? "");
+    setObjetivoTratamento(pr.objetivo_tratamento ?? "");
     setCondutaTerapiaManual(Boolean(pr.conduta_terapia_manual));
     setCondutaLiberacao(Boolean(pr.conduta_liberacao));
     setCondutaMobilizacao(Boolean(pr.conduta_mobilizacao));
     setCondutaAlongamento(Boolean(pr.conduta_alongamento));
     setCondutaExercicios(Boolean(pr.conduta_exercicios));
-    setCondutaOutras(pr.conduta_outras || "");
-    setEvolucaoData(pr.evolucao_data || "");
-    setEvolucao(pr.evolucao || "");
+    setCondutaOutras(pr.conduta_outras ?? "");
+    setEvolucaoData(pr.evolucao_data ?? dataAtualLocal());
+    setEvolucao(pr.evolucao ?? "");
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -448,8 +456,12 @@ export default function Prontuarios() {
     try {
       await dbExecute("DELETE FROM prontuarios WHERE id = ?", [String(id)]);
       carregar();
-    } catch (e) {
-      alert("Erro ao excluir: " + e);
+    } catch (e: any) {
+      if (String(e).includes("FOREIGN KEY constraint failed")) {
+        alert("Não é possível excluir este prontuário pois ele possui registros vinculados.");
+      } else {
+        alert("Erro ao excluir: " + e);
+      }
     }
   };
 
